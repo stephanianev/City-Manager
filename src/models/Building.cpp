@@ -17,8 +17,8 @@ size_t Building::getOccupantCount() const {
 vector<shared_ptr<Citizen>> Building::getOccupants() const {
     vector<shared_ptr<Citizen>> result;
 
-    for (auto& w : occupants) {
-        if (auto c = w.lock()) {
+    for (auto& w : occupants) { // auto& to avoid copying weak_ptr (auto deduces a type from the initializer)
+        if (auto c = w.lock()) { // lock the weak_ptr to get a shared_ptr (w.lock() attempts to create a shared_ptr<Citizen>)
             result.push_back(c);
         }
     }

@@ -1,10 +1,15 @@
 CXX = g++
 CXXFLAGS = -std=c++17 -Wall
 
-SRC = $(wildcard src/**/*.cpp) src/main.cpp
+SRC = src/main.cpp \
+      src/core/CityManager.cpp \
+      src/models/Citizen.cpp \
+      src/models/Building.cpp
 
-app:
-	$(CXX) $(CXXFLAGS) $(SRC) -o app
+TARGET = app
+
+all:
+	$(CXX) $(CXXFLAGS) $(SRC) -o $(TARGET)
 
 clean:
-	rm -f app
+	rm -f $(TARGET) $(TARGET).exe

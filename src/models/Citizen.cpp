@@ -7,6 +7,7 @@ Citizen::Citizen(int id,
     : id(id), name(name), age(age), profession(profession) {}
 
 int Citizen::getId() const { return id; }
+int Citizen::getAge() const { return age; }
 string Citizen::getName() const { return name; }
 string Citizen::getProfession() const { return profession; }
 

@@ -1,4 +1,4 @@
-#pragma once
+#pragma once // header guard
 
 #include <string>
 #include <memory>
@@ -26,6 +26,7 @@ public:
 
     int getId() const;
     string getName() const;
+    int getAge() const;
     string getProfession() const;
 
     shared_ptr<Building> getHome() const;
