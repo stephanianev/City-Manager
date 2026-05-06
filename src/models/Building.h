@@ -1,0 +1,35 @@
+#pragma once
+
+#include <string>
+#include <vector>
+#include <memory>
+
+using namespace std;
+
+class Citizen;
+
+class Building {
+protected:
+    int id;
+    string name;
+    size_t capacity;
+    vector<weak_ptr<Citizen>> occupants;
+
+protected:
+    void addOccupant(shared_ptr<Citizen> c);
+    void removeOccupant(int citizenId);
+
+public:
+    virtual ~Building() = default;
+
+    int getId() const;
+    string getName() const;
+
+    bool hasCapacity() const;
+    size_t getOccupantCount() const;
+
+    vector<shared_ptr<Citizen>> getOccupants() const;
+
+    virtual bool canAcceptCitizen(const Citizen&) const;
+    virtual string getType() const = 0;
+};

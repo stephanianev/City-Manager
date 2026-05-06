@@ -1,0 +1,46 @@
+#include "Building.h"
+#include "Citizen.h"
+
+#include <algorithm>
+
+int Building::getId() const { return id; }
+string Building::getName() const { return name; }
+
+bool Building::hasCapacity() const {
+    return occupants.size() < capacity;
+}
+
+size_t Building::getOccupantCount() const {
+    return occupants.size();
+}
+
+vector<shared_ptr<Citizen>> Building::getOccupants() const {
+    vector<shared_ptr<Citizen>> result;
+
+    for (auto& w : occupants) {
+        if (auto c = w.lock()) {
+            result.push_back(c);
+        }
+    }
+
+    return result;
+}
+
+void Building::addOccupant(shared_ptr<Citizen> c) {
+    occupants.push_back(c);
+}
+
+void Building::removeOccupant(int citizenId) {
+    occupants.erase(
+        remove_if(occupants.begin(), occupants.end(),
+            [citizenId](const weak_ptr<Citizen>& w) {
+                auto c = w.lock();
+                return !c || c->getId() == citizenId;
+            }),
+        occupants.end()
+    );
+}
+
+bool Building::canAcceptCitizen(const Citizen&) const {
+    return true;
+}
