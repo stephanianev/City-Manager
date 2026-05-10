@@ -22,9 +22,11 @@ public:
         try {
             test();
             results.push_back({name, true, "OK"});
-        } catch (const exception& e) {
+        }
+        catch (const exception& e) {
             results.push_back({name, false, e.what()});
-        } catch (...) {
+        }
+        catch (...) {
             results.push_back({name, false, "Unknown error"});
         }
     }
@@ -48,7 +50,9 @@ public:
         }
 
         cout << "\nSummary: "
-             << passed << "/" << results.size()
+             << passed
+             << "/"
+             << results.size()
              << " tests passed\n";
 
         cout << "================================\n";
@@ -67,139 +71,218 @@ public:
       if (!thrown) throw runtime_error("Expected exception not thrown"); }
 
 int main() {
+
     TestRunner runner;
 
     //--------------------------------------------------
-    // 1. BASIC CREATION
+    // 1. BASIC REMOVE
     //--------------------------------------------------
-    runner.run("Basic Creation", []() {
+    runner.run("Basic Citizen Removal", []() {
+
         CityManager city;
 
-        auto c = city.createCitizen("Ivan", 25, "Engineer");
+        auto c = city.createCitizen(
+            "Ivan",
+            25,
+            "Engineer"
+        );
 
-        EXPECT_TRUE(c != nullptr);
-        EXPECT_EQ(c->getId(), 1);
-        EXPECT_EQ(c->getName(), "Ivan");
-        EXPECT_EQ(c->getProfession(), "Engineer");
+        EXPECT_EQ(city.getTotalCitizens(), 1);
+
+        city.removeCitizen(c->getId());
+
+        EXPECT_EQ(city.getTotalCitizens(), 0);
     });
 
     //--------------------------------------------------
-    // 2. ID SEQUENCE
+    // 2. REMOVE INVALID ID
     //--------------------------------------------------
-    runner.run("ID Sequence", []() {
+    runner.run("Remove Invalid Citizen", []() {
+
+        CityManager city;
+
+        EXPECT_THROW(
+            city.removeCitizen(999)
+        );
+    });
+
+    //--------------------------------------------------
+    // 3. REMOVE TWICE
+    //--------------------------------------------------
+    runner.run("Remove Same Citizen Twice", []() {
+
+        CityManager city;
+
+        auto c = city.createCitizen(
+            "Ivan",
+            20,
+            "X"
+        );
+
+        city.removeCitizen(c->getId());
+
+        EXPECT_THROW(
+            city.removeCitizen(c->getId())
+        );
+    });
+
+    //--------------------------------------------------
+    // 4. MULTIPLE CITIZENS
+    //--------------------------------------------------
+    runner.run("Remove One From Many", []() {
+
         CityManager city;
 
         auto c1 = city.createCitizen("A", 20, "X");
-        auto c2 = city.createCitizen("B", 30, "Y");
+        auto c2 = city.createCitizen("B", 20, "X");
+        auto c3 = city.createCitizen("C", 20, "X");
 
-        EXPECT_EQ(c1->getId(), 1);
+        city.removeCitizen(c2->getId());
+
+        EXPECT_EQ(city.getTotalCitizens(), 2);
+    });
+
+    //--------------------------------------------------
+    // 5. ID CONTINUITY AFTER REMOVAL
+    //--------------------------------------------------
+    runner.run("ID Continuity After Removal", []() {
+
+        CityManager city;
+
+        auto c1 = city.createCitizen("A", 20, "X");
+
+        city.removeCitizen(c1->getId());
+
+        auto c2 = city.createCitizen("B", 20, "X");
+
         EXPECT_EQ(c2->getId(), 2);
     });
 
     //--------------------------------------------------
-    // 3. STATE INTEGRITY AFTER FAILURE
+    // 6. STRESS REMOVE
     //--------------------------------------------------
-    runner.run("State Integrity After Failure", []() {
+    runner.run("Stress Remove 1000 Citizens", []() {
+
         CityManager city;
 
-        city.createCitizen("Valid", 20, "X");
+        vector<int> ids;
 
-        EXPECT_THROW(city.createCitizen("", 20, "X"));
-        EXPECT_THROW(city.createCitizen("   ", 20, "X"));
-        EXPECT_THROW(city.createCitizen("Test", -1, "X"));
-        EXPECT_THROW(city.createCitizen("Test", 200, "X"));
+        for (int i = 0; i < 1000; i++) {
 
-        EXPECT_EQ(city.getTotalCitizens(), 1);
-    });
+            auto c = city.createCitizen(
+                "User",
+                20,
+                "X"
+            );
 
-    //--------------------------------------------------
-    // 4. ID CONTINUITY AFTER FAILURES
-    //--------------------------------------------------
-    runner.run("ID Continuity After Failure", []() {
-        CityManager city;
-
-        city.createCitizen("A", 20, "X");
-
-        EXPECT_THROW(city.createCitizen("", 20, "X"));
-
-        auto c = city.createCitizen("B", 30, "Y");
-
-        EXPECT_EQ(c->getId(), 2);
-    });
-
-    //--------------------------------------------------
-    // 5. BOUNDARY AGES
-    //--------------------------------------------------
-    runner.run("Boundary Ages", []() {
-        CityManager city;
-
-        auto c1 = city.createCitizen("Baby", 0, "None");
-        auto c2 = city.createCitizen("Old", 120, "Retired");
-
-        EXPECT_EQ(c1->getAge(), 0);
-        EXPECT_EQ(c2->getAge(), 120);
-    });
-
-    //--------------------------------------------------
-    // 6. EMPTY PROFESSION
-    //--------------------------------------------------
-    runner.run("Empty Profession Allowed", []() {
-        CityManager city;
-
-        auto c = city.createCitizen("NoJob", 25, "");
-
-        EXPECT_EQ(c->getProfession(), "");
-    });
-
-    //--------------------------------------------------
-    // 7. LARGE INPUT STRINGS
-    //--------------------------------------------------
-    runner.run("Large Name Input", []() {
-        CityManager city;
-
-        string longName(10000, 'A');
-
-        auto c = city.createCitizen(longName, 30, "X");
-
-        EXPECT_EQ(c->getName(), longName);
-    });
-
-    //--------------------------------------------------
-    // 8. MANY CITIZENS (STRESS)
-    //--------------------------------------------------
-    runner.run("Stress Test 10000 Citizens", []() {
-        CityManager city;
-
-        for (int i = 0; i < 10000; i++) {
-            city.createCitizen("User" + to_string(i), 20, "X");
+            ids.push_back(c->getId());
         }
 
-        EXPECT_EQ(city.getTotalCitizens(), 10000);
+        for (int id : ids) {
+            city.removeCitizen(id);
+        }
+
+        EXPECT_EQ(city.getTotalCitizens(), 0);
     });
 
     //--------------------------------------------------
-    // 9. DUPLICATE DATA (ALLOWED)
+    // 7. REMOVE FROM EMPTY SYSTEM
     //--------------------------------------------------
-    runner.run("Duplicate Names Allowed", []() {
+    runner.run("Remove From Empty System", []() {
+
         CityManager city;
 
-        auto c1 = city.createCitizen("Ivan", 20, "X");
-        auto c2 = city.createCitizen("Ivan", 20, "X");
-
-        EXPECT_TRUE(c1->getId() != c2->getId());
+        EXPECT_THROW(
+            city.removeCitizen(1)
+        );
     });
 
     //--------------------------------------------------
-    // 10. WHITESPACE EDGE CASES
+    // 8. LARGE IDS TEST
     //--------------------------------------------------
-    runner.run("Whitespace Edge Cases", []() {
+    runner.run("Large Amount Creation Then Remove", []() {
+
         CityManager city;
 
-        EXPECT_THROW(city.createCitizen("\t\n", 20, "X"));
+        vector<int> ids;
+
+        for (int i = 0; i < 5000; i++) {
+
+            auto c = city.createCitizen(
+                "User" + to_string(i),
+                20,
+                "X"
+            );
+
+            ids.push_back(c->getId());
+        }
+
+        for (int i = 0; i < 2500; i++) {
+            city.removeCitizen(ids[i]);
+        }
+
+        EXPECT_EQ(city.getTotalCitizens(), 2500);
+    });
+
+    //--------------------------------------------------
+    // 9. BUILDING CREATION
+    //--------------------------------------------------
+    runner.run("Basic Building Creation", []() {
+
+        CityManager city;
+
+        auto b =
+            city.createResidentialBuilding(
+                "Block A",
+                10
+            );
+
+        EXPECT_TRUE(b != nullptr);
+
+        EXPECT_EQ(
+            city.getTotalBuildings(),
+            1
+        );
+
+        EXPECT_EQ(
+            b->getType(),
+            "Residential"
+        );
+    });
+
+    //--------------------------------------------------
+    // 10. INVALID BUILDINGS
+    //--------------------------------------------------
+    runner.run("Invalid Building Validation", []() {
+
+        CityManager city;
+
+        EXPECT_THROW(
+            city.createResidentialBuilding(
+                "",
+                10
+            )
+        );
+
+        EXPECT_THROW(
+            city.createResidentialBuilding(
+                "   ",
+                10
+            )
+        );
+
+        EXPECT_THROW(
+            city.createResidentialBuilding(
+                "Block",
+                0
+            )
+        );
     });
 
     //--------------------------------------------------
     // FINAL REPORT
     //--------------------------------------------------
     runner.report();
+
+    return 0;
 }

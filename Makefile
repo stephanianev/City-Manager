@@ -4,7 +4,8 @@ CXXFLAGS = -std=c++17 -Wall
 SRC = src/main.cpp \
       src/core/CityManager.cpp \
       src/models/Citizen.cpp \
-      src/models/Building.cpp
+      src/models/Building.cpp \
+      src/models/ResidentialBuilding.cpp
 
 TARGET = app
 

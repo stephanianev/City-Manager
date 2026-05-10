@@ -6,6 +6,7 @@
 
 #include "../models/Citizen.h"
 #include "../models/Building.h"
+#include "../models/ResidentialBuilding.h"
 
 using namespace std;
 
@@ -15,6 +16,7 @@ private:
     unordered_map<int, shared_ptr<Building>> buildings;
 
     int nextCitizenId = 1;
+    int nextBuildingId = 1;
 
     bool isBlank(const string& str) const;
 
@@ -25,5 +27,13 @@ public:
         const string& profession
     );
 
+    shared_ptr<ResidentialBuilding> createResidentialBuilding(
+        const string& name,
+        size_t capacity
+    );
+
+    void removeCitizen(int citizenId);
+
     int getTotalCitizens() const;
+    int getTotalBuildings() const;
 };

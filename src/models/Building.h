@@ -7,12 +7,16 @@
 using namespace std;
 
 class Citizen;
+class CityManager;
 
 class Building {
+    friend class CityManager;
+
 protected:
     int id;
     string name;
     size_t capacity;
+
     vector<weak_ptr<Citizen>> occupants;
 
 protected:
@@ -31,5 +35,6 @@ public:
     vector<shared_ptr<Citizen>> getOccupants() const;
 
     virtual bool canAcceptCitizen(const Citizen&) const;
+
     virtual string getType() const = 0;
 };
