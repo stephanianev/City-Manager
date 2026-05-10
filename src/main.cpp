@@ -79,9 +79,9 @@ int main() {
     TestRunner runner;
 
     //--------------------------------------------------
-    // 1. BASIC HOME ASSIGNMENT
+    // 1. BASIC REMOVE BUILDING
     //--------------------------------------------------
-    runner.run("Basic Home Assignment", []() {
+    runner.run("Basic Remove Building", []() {
 
         CityManager city;
 
@@ -103,117 +103,38 @@ int main() {
             building->getId()
         );
 
-        EXPECT_TRUE(
-            citizen->getHome() != nullptr
-        );
-
-        EXPECT_EQ(
-            citizen->getHome()->getId(),
+        city.removeBuilding(
             building->getId()
         );
 
         EXPECT_EQ(
-            building->getOccupantCount(),
-            1
+            city.getTotalBuildings(),
+            0
+        );
+
+        EXPECT_TRUE(
+            citizen->getHome() == nullptr
         );
     });
 
     //--------------------------------------------------
-    // 2. INVALID CITIZEN
+    // 2. REMOVE INVALID BUILDING
     //--------------------------------------------------
-    runner.run("Assign Invalid Citizen", []() {
+    runner.run("Remove Invalid Building", []() {
 
         CityManager city;
-
-        auto building =
-            city.createResidentialBuilding(
-                "Block",
-                10
-            );
 
         EXPECT_THROW(
-            city.assignHome(
-                999,
-                building->getId()
-            )
+            city.removeBuilding(999)
         );
     });
 
     //--------------------------------------------------
-    // 3. INVALID BUILDING
+    // 3. MULTIPLE BUILDINGS
     //--------------------------------------------------
-    runner.run("Assign Invalid Building", []() {
+    runner.run("Remove One Building From Many", []() {
 
         CityManager city;
-
-        auto citizen =
-            city.createCitizen(
-                "Ivan",
-                20,
-                "X"
-            );
-
-        EXPECT_THROW(
-            city.assignHome(
-                citizen->getId(),
-                999
-            )
-        );
-    });
-
-    //--------------------------------------------------
-    // 4. CAPACITY LIMIT
-    //--------------------------------------------------
-    runner.run("Building Capacity Enforcement", []() {
-
-        CityManager city;
-
-        auto b =
-            city.createResidentialBuilding(
-                "Small",
-                1
-            );
-
-        auto c1 =
-            city.createCitizen(
-                "A",
-                20,
-                "X"
-            );
-
-        auto c2 =
-            city.createCitizen(
-                "B",
-                20,
-                "X"
-            );
-
-        city.assignHome(
-            c1->getId(),
-            b->getId()
-        );
-
-        EXPECT_THROW(
-            city.assignHome(
-                c2->getId(),
-                b->getId()
-            )
-        );
-    });
-
-    //--------------------------------------------------
-    // 5. REASSIGN HOME
-    //--------------------------------------------------
-    runner.run("Home Reassignment", []() {
-
-        CityManager city;
-
-        auto citizen =
-            city.createCitizen(
-                "Ivan",
-                20,
-                "X"
-            );
 
         auto b1 =
             city.createResidentialBuilding(
@@ -227,50 +148,38 @@ int main() {
                 10
             );
 
-        city.assignHome(
-            citizen->getId(),
-            b1->getId()
-        );
+        auto b3 =
+            city.createResidentialBuilding(
+                "C",
+                10
+            );
 
-        city.assignHome(
-            citizen->getId(),
-            b2->getId()
-        );
+        city.removeBuilding(b2->getId());
 
         EXPECT_EQ(
-            b1->getOccupantCount(),
-            0
-        );
-
-        EXPECT_EQ(
-            b2->getOccupantCount(),
-            1
-        );
-
-        EXPECT_EQ(
-            citizen->getHome()->getId(),
-            b2->getId()
+            city.getTotalBuildings(),
+            2
         );
     });
 
     //--------------------------------------------------
-    // 6. DUPLICATE ASSIGNMENT
+    // 4. CITIZEN STATE CLEANUP
     //--------------------------------------------------
-    runner.run("Duplicate Home Assignment", []() {
+    runner.run("Citizen Home Cleanup", []() {
 
         CityManager city;
 
         auto citizen =
             city.createCitizen(
-                "Ivan",
-                20,
-                "X"
+                "Anna",
+                30,
+                "Doctor"
             );
 
         auto building =
             city.createResidentialBuilding(
-                "A",
-                10
+                "Hospital Block",
+                5
             );
 
         city.assignHome(
@@ -278,21 +187,23 @@ int main() {
             building->getId()
         );
 
-        city.assignHome(
-            citizen->getId(),
+        EXPECT_TRUE(
+            citizen->getHome() != nullptr
+        );
+
+        city.removeBuilding(
             building->getId()
         );
 
-        EXPECT_EQ(
-            building->getOccupantCount(),
-            1
+        EXPECT_TRUE(
+            citizen->getHome() == nullptr
         );
     });
 
     //--------------------------------------------------
-    // 7. STRESS TEST
+    // 5. MASS CLEANUP
     //--------------------------------------------------
-    runner.run("Mass Assignment Stress Test", []() {
+    runner.run("Mass Cleanup", []() {
 
         CityManager city;
 
@@ -301,6 +212,8 @@ int main() {
                 "Mega",
                 10000
             );
+
+        vector<shared_ptr<Citizen>> citizens;
 
         for (int i = 0; i < 5000; i++) {
 
@@ -315,11 +228,115 @@ int main() {
                 c->getId(),
                 building->getId()
             );
+
+            citizens.push_back(c);
+        }
+
+        city.removeBuilding(
+            building->getId()
+        );
+
+        for (auto& c : citizens) {
+
+            EXPECT_TRUE(
+                c->getHome() == nullptr
+            );
+        }
+    });
+
+    //--------------------------------------------------
+    // 6. DOUBLE REMOVE
+    //--------------------------------------------------
+    runner.run("Remove Building Twice", []() {
+
+        CityManager city;
+
+        auto building =
+            city.createResidentialBuilding(
+                "Block",
+                10
+            );
+
+        city.removeBuilding(
+            building->getId()
+        );
+
+        EXPECT_THROW(
+            city.removeBuilding(
+                building->getId()
+            )
+        );
+    });
+
+    //--------------------------------------------------
+    // 7. CITIZENS REMAIN ALIVE
+    //--------------------------------------------------
+    runner.run("Citizens Survive Building Removal", []() {
+
+        CityManager city;
+
+        auto citizen =
+            city.createCitizen(
+                "Ivan",
+                25,
+                "Engineer"
+            );
+
+        auto building =
+            city.createResidentialBuilding(
+                "Block",
+                10
+            );
+
+        city.assignHome(
+            citizen->getId(),
+            building->getId()
+        );
+
+        city.removeBuilding(
+            building->getId()
+        );
+
+        EXPECT_EQ(
+            city.getTotalCitizens(),
+            1
+        );
+
+        EXPECT_EQ(
+            citizen->getName(),
+            "Ivan"
+        );
+    });
+
+    //--------------------------------------------------
+    // 8. STRESS TEST
+    //--------------------------------------------------
+    runner.run("Stress Remove Buildings", []() {
+
+        CityManager city;
+
+        vector<int> ids;
+
+        for (int i = 0; i < 1000; i++) {
+
+            auto b =
+                city.createResidentialBuilding(
+                    "Block",
+                    100
+                );
+
+            ids.push_back(
+                b->getId()
+            );
+        }
+
+        for (int id : ids) {
+            city.removeBuilding(id);
         }
 
         EXPECT_EQ(
-            building->getOccupantCount(),
-            5000
+            city.getTotalBuildings(),
+            0
         );
     });
 

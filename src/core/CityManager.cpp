@@ -185,6 +185,76 @@ void CityManager::assignHome(
     citizen->setHome(building);
 }
 
+void CityManager::removeBuilding(int buildingId) {
+
+    //--------------------------------------
+    // Validate building
+    //--------------------------------------
+
+    auto buildingIt = buildings.find(buildingId);
+
+    if (buildingIt == buildings.end()) {
+        throw invalid_argument(
+            "Building does not exist"
+        );
+    }
+
+    auto building = buildingIt->second;
+
+    //--------------------------------------
+    // Cleanup citizen references
+    //--------------------------------------
+
+    auto occupants = building->getOccupants();
+
+    for (auto& citizen : occupants) {
+
+        //----------------------------------
+        // Home cleanup
+        //----------------------------------
+
+        auto home = citizen->getHome();
+
+        if (home &&
+            home->getId() == buildingId) {
+
+            citizen->setHome(nullptr);
+        }
+
+        //----------------------------------
+        // Workplace cleanup
+        //----------------------------------
+
+        auto workplace =
+            citizen->getWorkplace();
+
+        if (workplace &&
+            workplace->getId() == buildingId) {
+
+            citizen->setWorkplace(nullptr);
+        }
+
+        //----------------------------------
+        // Location cleanup
+        //----------------------------------
+
+        auto location =
+            citizen->getLocation();
+
+        if (location &&
+            location->getId() == buildingId) {
+
+            citizen->setLocation(nullptr);
+        }
+    }
+
+    //--------------------------------------
+    // Remove building from system
+    //--------------------------------------
+
+    buildings.erase(buildingIt);
+}
+
 int CityManager::getTotalCitizens() const {
     return static_cast<int>(citizens.size());
 }
