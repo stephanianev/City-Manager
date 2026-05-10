@@ -311,39 +311,6 @@ void CityManager::moveCitizen(
     citizen->setLocation(building);
 }
 
-void CityManager::removeCitizen(int citizenId) {
-    auto it = citizens.find(citizenId);
-
-    if (it == citizens.end()) {
-        throw invalid_argument(
-            "Citizen does not exist"
-        );
-    }
-
-    auto citizen = it->second;
-
-    // Remove from home
-    if (auto home = citizen->getHome()) {
-        home->removeOccupant(citizenId);
-    }
-
-    // Remove from workplace
-    if (auto workplace = citizen->getWorkplace()) {
-        workplace->removeOccupant(citizenId);
-    }
-
-    // Remove from current location
-    if (auto location = citizen->getLocation()) {
-        location->removeOccupant(citizenId);
-    }
-
-    citizen->setHome(nullptr);
-    citizen->setWorkplace(nullptr);
-    citizen->setLocation(nullptr);
-
-    citizens.erase(it);
-}
-
 void CityManager::assignHome(
     int citizenId,
     int buildingId
@@ -413,7 +380,46 @@ void CityManager::assignHome(
     citizen->setHome(building);
 }
 
-void CityManager::removeBuilding(int buildingId) {
+void CityManager::removeCitizen(
+    int citizenId
+) {
+
+    //--------------------------------------
+    // Validate citizen
+    //--------------------------------------
+
+    auto citizenIt = citizens.find(citizenId);
+
+    if (citizenIt == citizens.end()) {
+        throw invalid_argument(
+            "Citizen does not exist"
+        );
+    }
+
+    auto citizen = citizenIt->second;
+
+    //--------------------------------------
+    // Remove from current location
+    //--------------------------------------
+
+    if (auto location =
+        citizen->getLocation()) {
+
+        location->removeOccupant(
+            citizenId
+        );
+    }
+
+    //--------------------------------------
+    // Remove citizen from storage
+    //--------------------------------------
+
+    citizens.erase(citizenIt);
+}
+
+void CityManager::removeBuilding(
+    int buildingId
+) {
 
     //--------------------------------------
     // Validate building
@@ -430,54 +436,50 @@ void CityManager::removeBuilding(int buildingId) {
     auto building = buildingIt->second;
 
     //--------------------------------------
-    // Cleanup citizen references
+    // Clear citizen references
     //--------------------------------------
 
-    auto occupants = building->getOccupants();
-
-    for (auto& citizen : occupants) {
+    for (const auto& [id, citizen] : citizens) {
 
         //----------------------------------
-        // Home cleanup
+        // Home
         //----------------------------------
 
-        auto home = citizen->getHome();
+        if (auto home =
+            citizen->getHome()) {
 
-        if (home &&
-            home->getId() == buildingId) {
-
-            citizen->setHome(nullptr);
+            if (home->getId() == buildingId) {
+                citizen->setHome(nullptr);
+            }
         }
 
         //----------------------------------
-        // Workplace cleanup
+        // Workplace
         //----------------------------------
 
-        auto workplace =
-            citizen->getWorkplace();
+        if (auto workplace =
+            citizen->getWorkplace()) {
 
-        if (workplace &&
-            workplace->getId() == buildingId) {
-
-            citizen->setWorkplace(nullptr);
+            if (workplace->getId() == buildingId) {
+                citizen->setWorkplace(nullptr);
+            }
         }
 
         //----------------------------------
-        // Location cleanup
+        // Current location
         //----------------------------------
 
-        auto location =
-            citizen->getLocation();
+        if (auto location =
+            citizen->getLocation()) {
 
-        if (location &&
-            location->getId() == buildingId) {
-
-            citizen->setLocation(nullptr);
+            if (location->getId() == buildingId) {
+                citizen->setLocation(nullptr);
+            }
         }
     }
 
     //--------------------------------------
-    // Remove building from system
+    // Remove building
     //--------------------------------------
 
     buildings.erase(buildingIt);

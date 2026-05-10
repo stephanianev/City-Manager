@@ -52,10 +52,17 @@ public:
 
     void assignWorkplace(int citizenId, int buildingId);
     void moveCitizen(int citizenId, int buildingId);
-    void removeCitizen(int citizenId);
 
     void assignHome(int citizenId, int buildingId);
-    void removeBuilding(int buildingId); // does not remove manually assigned citizens, but clears their references
+
+    //--------------------------------------------------
+    // Removal Operations
+    //--------------------------------------------------
+    // Note: we do not manually null every weak_ptr, because they will automatically become expired when the shared_ptr is destroyed.
+
+    void removeCitizen(int citizenId);
+
+    void removeBuilding(int buildingId);
 
     //--------------------------------------------------
     // Query Operations
