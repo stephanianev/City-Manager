@@ -57,6 +57,27 @@ public:
     void assignHome(int citizenId, int buildingId);
     void removeBuilding(int buildingId); // does not remove manually assigned citizens, but clears their references
 
-    int getTotalCitizens() const;
-    int getTotalBuildings() const;
+    //--------------------------------------------------
+    // Query Operations
+    //--------------------------------------------------
+
+    vector<shared_ptr<Citizen>> findCitizensByProfession(const string& profession) const;
+
+    vector<shared_ptr<Citizen>> listCitizensInBuilding(int buildingId) const;
+
+    vector<shared_ptr<Building>> findBuildingsWithCapacity() const;
+
+    //--------------------------------------------------
+    // Statistics
+    //--------------------------------------------------
+
+    size_t getTotalCitizens() const;
+
+    size_t getTotalBuildings() const;
+
+    size_t getHomelessCount() const;
+
+    size_t getUnemployedCount() const;
+
+    double getOccupancyRate(int buildingId) const;
 };

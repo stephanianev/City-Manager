@@ -483,10 +483,106 @@ void CityManager::removeBuilding(int buildingId) {
     buildings.erase(buildingIt);
 }
 
-int CityManager::getTotalCitizens() const {
-    return static_cast<int>(citizens.size());
+vector<shared_ptr<Citizen>>
+CityManager::findCitizensByProfession(
+    const string& profession
+) const {
+
+    vector<shared_ptr<Citizen>> result;
+
+    for (const auto& [id, citizen] : citizens) {
+
+        if (citizen->getProfession() == profession) {
+            result.push_back(citizen);
+        }
+    }
+
+    return result;
 }
 
-int CityManager::getTotalBuildings() const {
-    return static_cast<int>(buildings.size());
+vector<shared_ptr<Citizen>>
+CityManager::listCitizensInBuilding(
+    int buildingId
+) const {
+
+    auto it = buildings.find(buildingId);
+
+    if (it == buildings.end()) {
+        throw invalid_argument(
+            "Building does not exist"
+        );
+    }
+
+    return it->second->getOccupants();
+}
+
+vector<shared_ptr<Building>>
+CityManager::findBuildingsWithCapacity() const {
+
+    vector<shared_ptr<Building>> result;
+
+    for (const auto& [id, building] : buildings) {
+
+        if (building->hasCapacity()) {
+            result.push_back(building);
+        }
+    }
+
+    return result;
+}
+
+size_t CityManager::getTotalCitizens() const {
+    return citizens.size();
+}
+
+size_t CityManager::getTotalBuildings() const {
+    return buildings.size();
+}
+
+size_t CityManager::getHomelessCount() const {
+
+    size_t count = 0;
+
+    for (const auto& [id, citizen] : citizens) {
+
+        if (!citizen->getHome()) {
+            count++;
+        }
+    }
+
+    return count;
+}
+
+size_t CityManager::getUnemployedCount() const {
+
+    size_t count = 0;
+
+    for (const auto& [id, citizen] : citizens) {
+
+        if (!citizen->getWorkplace()) {
+            count++;
+        }
+    }
+
+    return count;
+}
+
+double CityManager::getOccupancyRate(int buildingId) const {
+
+    auto it = buildings.find(buildingId);
+
+    if (it == buildings.end()) {
+        throw invalid_argument(
+            "Building does not exist"
+        );
+    }
+
+    auto building = it->second;
+
+    if (building->capacity == 0) {
+        return 0.0;
+    }
+
+    return static_cast<double>(building->getOccupantCount()) /
+           building->capacity;
 }

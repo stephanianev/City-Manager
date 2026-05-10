@@ -5,6 +5,7 @@
 
 int Building::getId() const { return id; }
 string Building::getName() const { return name; }
+size_t Building::getCapacity() const { return capacity; }
 
 bool Building::hasCapacity() const {
     return occupants.size() < capacity;

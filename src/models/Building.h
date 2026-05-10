@@ -28,6 +28,7 @@ public:
 
     int getId() const;
     string getName() const;
+    size_t getCapacity() const;
 
     bool hasCapacity() const;
     size_t getOccupantCount() const;
