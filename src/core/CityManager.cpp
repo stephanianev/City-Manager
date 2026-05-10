@@ -106,6 +106,85 @@ void CityManager::removeCitizen(int citizenId) {
     citizens.erase(it);
 }
 
+void CityManager::assignHome(
+    int citizenId,
+    int buildingId
+) {
+
+    //--------------------------------------
+    // Validate citizen
+    //--------------------------------------
+
+    auto citizenIt = citizens.find(citizenId);
+
+    if (citizenIt == citizens.end()) {
+        throw invalid_argument(
+            "Citizen does not exist"
+        );
+    }
+
+    //--------------------------------------
+    // Validate building
+    //--------------------------------------
+
+    auto buildingIt = buildings.find(buildingId);
+
+    if (buildingIt == buildings.end()) {
+        throw invalid_argument(
+            "Building does not exist"
+        );
+    }
+
+    auto citizen = citizenIt->second;
+    auto building = buildingIt->second;
+
+    //--------------------------------------
+    // Building type validation
+    //--------------------------------------
+
+    if (building->getType() != "Residential") {
+        throw invalid_argument(
+            "Home must be residential"
+        );
+    }
+
+    //--------------------------------------
+    // Capacity validation
+    //--------------------------------------
+
+    if (!building->hasCapacity()) {
+        throw runtime_error(
+            "Building is full"
+        );
+    }
+
+    //--------------------------------------
+    // Validation hook
+    //--------------------------------------
+
+    if (!building->canAcceptCitizen(*citizen)) {
+        throw runtime_error(
+            "Citizen rejected by building"
+        );
+    }
+
+    //--------------------------------------
+    // Remove old home
+    //--------------------------------------
+
+    if (auto oldHome = citizen->getHome()) {
+        oldHome->removeOccupant(citizenId);
+    }
+
+    //--------------------------------------
+    // Synchronize state
+    //--------------------------------------
+
+    building->addOccupant(citizen);
+
+    citizen->setHome(building);
+}
+
 int CityManager::getTotalCitizens() const {
     return static_cast<int>(citizens.size());
 }

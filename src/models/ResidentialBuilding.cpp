@@ -1,4 +1,5 @@
 #include "ResidentialBuilding.h"
+#include "Citizen.h"
 
 ResidentialBuilding::ResidentialBuilding(
     int id,
@@ -8,6 +9,10 @@ ResidentialBuilding::ResidentialBuilding(
     this->id = id;
     this->name = name;
     this->capacity = capacity;
+}
+
+bool ResidentialBuilding::canAcceptCitizen(const Citizen&) const {
+    return true;
 }
 
 string ResidentialBuilding::getType() const {

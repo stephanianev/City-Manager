@@ -27,6 +27,17 @@ vector<shared_ptr<Citizen>> Building::getOccupants() const {
 }
 
 void Building::addOccupant(shared_ptr<Citizen> c) {
+
+    for (const auto& w : occupants) {
+
+        auto existing = w.lock();
+
+        if (existing &&
+            existing->getId() == c->getId()) {
+            return;
+        }
+    }
+
     occupants.push_back(c);
 }
 
@@ -39,8 +50,4 @@ void Building::removeOccupant(int citizenId) {
             }),
         occupants.end()
     );
-}
-
-bool Building::canAcceptCitizen(const Citizen&) const {
-    return true;
 }

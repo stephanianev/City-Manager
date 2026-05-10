@@ -33,6 +33,7 @@ public:
     );
 
     void removeCitizen(int citizenId);
+    void assignHome(int citizenId, int buildingId);
 
     int getTotalCitizens() const;
     int getTotalBuildings() const;

@@ -34,7 +34,7 @@ public:
 
     vector<shared_ptr<Citizen>> getOccupants() const;
 
-    virtual bool canAcceptCitizen(const Citizen&) const;
+    virtual bool canAcceptCitizen(const Citizen& citizen) const = 0;
 
     virtual string getType() const = 0;
 };
