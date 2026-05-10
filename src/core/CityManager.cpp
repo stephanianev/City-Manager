@@ -73,6 +73,185 @@ CityManager::createResidentialBuilding(
     return building;
 }
 
+shared_ptr<CommercialBuilding>
+CityManager::createCommercialBuilding(
+    const string& name,
+    size_t capacity
+) {
+
+    if (name.empty() || isBlank(name)) {
+        throw invalid_argument(
+            "Building name cannot be empty"
+        );
+    }
+
+    if (capacity == 0) {
+        throw invalid_argument(
+            "Building capacity cannot be zero"
+        );
+    }
+
+    int id = nextBuildingId++;
+
+    auto building =
+        make_shared<CommercialBuilding>(
+            id,
+            name,
+            capacity
+        );
+
+    buildings[id] = building;
+
+    return building;
+}
+
+shared_ptr<IndustrialBuilding>
+CityManager::createIndustrialBuilding(
+    const string& name,
+    size_t capacity
+) {
+
+    if (name.empty() || isBlank(name)) {
+        throw invalid_argument(
+            "Building name cannot be empty"
+        );
+    }
+
+    if (capacity == 0) {
+        throw invalid_argument(
+            "Building capacity cannot be zero"
+        );
+    }
+
+    int id = nextBuildingId++;
+
+    auto building =
+        make_shared<IndustrialBuilding>(
+            id,
+            name,
+            capacity
+        );
+
+    buildings[id] = building;
+
+    return building;
+}
+
+shared_ptr<ServiceBuilding>
+CityManager::createServiceBuilding(
+    const string& name,
+    size_t capacity
+) {
+
+    if (name.empty() || isBlank(name)) {
+        throw invalid_argument(
+            "Building name cannot be empty"
+        );
+    }
+
+    if (capacity == 0) {
+        throw invalid_argument(
+            "Building capacity cannot be zero"
+        );
+    }
+
+    int id = nextBuildingId++;
+
+    auto building =
+        make_shared<ServiceBuilding>(
+            id,
+            name,
+            capacity
+        );
+
+    buildings[id] = building;
+
+    return building;
+}
+
+void CityManager::assignWorkplace(
+    int citizenId,
+    int buildingId
+) {
+
+    //--------------------------------------
+    // Validate citizen
+    //--------------------------------------
+
+    auto citizenIt = citizens.find(citizenId);
+
+    if (citizenIt == citizens.end()) {
+        throw invalid_argument(
+            "Citizen does not exist"
+        );
+    }
+
+    //--------------------------------------
+    // Validate building
+    //--------------------------------------
+
+    auto buildingIt = buildings.find(buildingId);
+
+    if (buildingIt == buildings.end()) {
+        throw invalid_argument(
+            "Building does not exist"
+        );
+    }
+
+    auto citizen = citizenIt->second;
+    auto building = buildingIt->second;
+
+    //--------------------------------------
+    // Residential buildings forbidden
+    //--------------------------------------
+
+    if (building->getType() == "Residential") {
+        throw invalid_argument(
+            "Residential buildings cannot be workplaces"
+        );
+    }
+
+    //--------------------------------------
+    // Capacity validation
+    //--------------------------------------
+
+    if (!building->hasCapacity()) {
+        throw runtime_error(
+            "Building is full"
+        );
+    }
+
+    //--------------------------------------
+    // Validation hook
+    //--------------------------------------
+
+    if (!building->canAcceptCitizen(*citizen)) {
+        throw runtime_error(
+            "Citizen rejected by building"
+        );
+    }
+
+    //--------------------------------------
+    // Remove previous workplace
+    //--------------------------------------
+
+    if (auto oldWorkplace =
+        citizen->getWorkplace()) {
+
+        oldWorkplace->removeOccupant(
+            citizenId
+        );
+    }
+
+    //--------------------------------------
+    // Synchronize state
+    //--------------------------------------
+
+    building->addOccupant(citizen);
+
+    citizen->setWorkplace(building);
+}
+
 void CityManager::removeCitizen(int citizenId) {
     auto it = citizens.find(citizenId);
 

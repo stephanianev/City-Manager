@@ -5,7 +5,10 @@ SRC = src/main.cpp \
       src/core/CityManager.cpp \
       src/models/Citizen.cpp \
       src/models/Building.cpp \
-      src/models/ResidentialBuilding.cpp
+      src/models/ResidentialBuilding.cpp \
+      src/models/CommercialBuilding.cpp \
+      src/models/IndustrialBuilding.cpp \
+      src/models/ServiceBuilding.cpp
 
 TARGET = app
 

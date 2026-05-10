@@ -7,6 +7,9 @@
 #include "../models/Citizen.h"
 #include "../models/Building.h"
 #include "../models/ResidentialBuilding.h"
+#include "../models/CommercialBuilding.h"
+#include "../models/IndustrialBuilding.h"
+#include "../models/ServiceBuilding.h"
 
 using namespace std;
 
@@ -31,6 +34,23 @@ public:
         const string& name,
         size_t capacity
     );
+
+    shared_ptr<CommercialBuilding> createCommercialBuilding(
+        const string& name,
+        size_t capacity
+    );
+
+    shared_ptr<IndustrialBuilding> createIndustrialBuilding(
+        const string& name,
+        size_t capacity
+    );
+
+    shared_ptr<ServiceBuilding> createServiceBuilding(
+        const string& name,
+        size_t capacity
+    );
+
+    void assignWorkplace(int citizenId, int buildingId);
 
     void removeCitizen(int citizenId);
     void assignHome(int citizenId, int buildingId);
