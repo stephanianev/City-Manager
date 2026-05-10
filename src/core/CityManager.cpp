@@ -232,24 +232,83 @@ void CityManager::assignWorkplace(
     }
 
     //--------------------------------------
-    // Remove previous workplace
+    // Synchronize state
     //--------------------------------------
 
-    if (auto oldWorkplace =
-        citizen->getWorkplace()) {
+    citizen->setWorkplace(building);
+}
 
-        oldWorkplace->removeOccupant(
+void CityManager::moveCitizen(
+    int citizenId,
+    int buildingId
+) {
+
+    //--------------------------------------
+    // Validate citizen
+    //--------------------------------------
+
+    auto citizenIt = citizens.find(citizenId);
+
+    if (citizenIt == citizens.end()) {
+        throw invalid_argument(
+            "Citizen does not exist"
+        );
+    }
+
+    //--------------------------------------
+    // Validate building
+    //--------------------------------------
+
+    auto buildingIt = buildings.find(buildingId);
+
+    if (buildingIt == buildings.end()) {
+        throw invalid_argument(
+            "Building does not exist"
+        );
+    }
+
+    auto citizen = citizenIt->second;
+    auto building = buildingIt->second;
+
+    //--------------------------------------
+    // Capacity validation
+    //--------------------------------------
+
+    if (!building->hasCapacity()) {
+        throw runtime_error(
+            "Building is full"
+        );
+    }
+
+    //--------------------------------------
+    // Validation hook
+    //--------------------------------------
+
+    if (!building->canAcceptCitizen(*citizen)) {
+        throw runtime_error(
+            "Citizen rejected by building"
+        );
+    }
+
+    //--------------------------------------
+    // Remove old location
+    //--------------------------------------
+
+    if (auto oldLocation =
+        citizen->getLocation()) {
+
+        oldLocation->removeOccupant(
             citizenId
         );
     }
 
     //--------------------------------------
-    // Synchronize state
+    // Add new location
     //--------------------------------------
 
     building->addOccupant(citizen);
 
-    citizen->setWorkplace(building);
+    citizen->setLocation(building);
 }
 
 void CityManager::removeCitizen(int citizenId) {
@@ -348,18 +407,8 @@ void CityManager::assignHome(
     }
 
     //--------------------------------------
-    // Remove old home
-    //--------------------------------------
-
-    if (auto oldHome = citizen->getHome()) {
-        oldHome->removeOccupant(citizenId);
-    }
-
-    //--------------------------------------
     // Synchronize state
     //--------------------------------------
-
-    building->addOccupant(citizen);
 
     citizen->setHome(building);
 }

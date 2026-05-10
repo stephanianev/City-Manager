@@ -51,8 +51,9 @@ public:
     );
 
     void assignWorkplace(int citizenId, int buildingId);
-
+    void moveCitizen(int citizenId, int buildingId);
     void removeCitizen(int citizenId);
+
     void assignHome(int citizenId, int buildingId);
     void removeBuilding(int buildingId); // does not remove manually assigned citizens, but clears their references
 

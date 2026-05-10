@@ -79,66 +79,9 @@ int main() {
     TestRunner runner;
 
     //--------------------------------------------------
-    // 1. COMMERCIAL BUILDING
+    // 1. BASIC MOVEMENT
     //--------------------------------------------------
-    runner.run("Commercial Building Creation", []() {
-
-        CityManager city;
-
-        auto b =
-            city.createCommercialBuilding(
-                "Mall",
-                100
-            );
-
-        EXPECT_EQ(
-            b->getType(),
-            "Commercial"
-        );
-    });
-
-    //--------------------------------------------------
-    // 2. INDUSTRIAL BUILDING
-    //--------------------------------------------------
-    runner.run("Industrial Building Creation", []() {
-
-        CityManager city;
-
-        auto b =
-            city.createIndustrialBuilding(
-                "Factory",
-                200
-            );
-
-        EXPECT_EQ(
-            b->getType(),
-            "Industrial"
-        );
-    });
-
-    //--------------------------------------------------
-    // 3. SERVICE BUILDING
-    //--------------------------------------------------
-    runner.run("Service Building Creation", []() {
-
-        CityManager city;
-
-        auto b =
-            city.createServiceBuilding(
-                "Hospital",
-                50
-            );
-
-        EXPECT_EQ(
-            b->getType(),
-            "Service"
-        );
-    });
-
-    //--------------------------------------------------
-    // 4. BASIC WORKPLACE ASSIGNMENT
-    //--------------------------------------------------
-    runner.run("Basic Workplace Assignment", []() {
+    runner.run("Basic Citizen Movement", []() {
 
         CityManager city;
 
@@ -151,21 +94,21 @@ int main() {
 
         auto building =
             city.createCommercialBuilding(
-                "Office",
+                "Mall",
                 10
             );
 
-        city.assignWorkplace(
+        city.moveCitizen(
             citizen->getId(),
             building->getId()
         );
 
         EXPECT_TRUE(
-            citizen->getWorkplace() != nullptr
+            citizen->getLocation() != nullptr
         );
 
         EXPECT_EQ(
-            citizen->getWorkplace()->getId(),
+            citizen->getLocation()->getId(),
             building->getId()
         );
 
@@ -176,9 +119,9 @@ int main() {
     });
 
     //--------------------------------------------------
-    // 5. RESIDENTIAL WORKPLACE BLOCK
+    // 2. MOVE BETWEEN BUILDINGS
     //--------------------------------------------------
-    runner.run("Residential Workplace Forbidden", []() {
+    runner.run("Move Between Buildings", []() {
 
         CityManager city;
 
@@ -189,77 +132,97 @@ int main() {
                 "Doctor"
             );
 
-        auto home =
-            city.createResidentialBuilding(
-                "Block",
+        auto b1 =
+            city.createCommercialBuilding(
+                "A",
+                10
+            );
+
+        auto b2 =
+            city.createCommercialBuilding(
+                "B",
+                10
+            );
+
+        city.moveCitizen(
+            citizen->getId(),
+            b1->getId()
+        );
+
+        city.moveCitizen(
+            citizen->getId(),
+            b2->getId()
+        );
+
+        EXPECT_EQ(
+            b1->getOccupantCount(),
+            0
+        );
+
+        EXPECT_EQ(
+            b2->getOccupantCount(),
+            1
+        );
+
+        EXPECT_EQ(
+            citizen->getLocation()->getId(),
+            b2->getId()
+        );
+    });
+
+    //--------------------------------------------------
+    // 3. INVALID CITIZEN
+    //--------------------------------------------------
+    runner.run("Move Invalid Citizen", []() {
+
+        CityManager city;
+
+        auto building =
+            city.createCommercialBuilding(
+                "Mall",
                 10
             );
 
         EXPECT_THROW(
-            city.assignWorkplace(
-                citizen->getId(),
-                home->getId()
+            city.moveCitizen(
+                999,
+                building->getId()
             )
         );
     });
 
     //--------------------------------------------------
-    // 6. WORKPLACE REASSIGNMENT
+    // 4. INVALID BUILDING
     //--------------------------------------------------
-    runner.run("Workplace Reassignment", []() {
+    runner.run("Move To Invalid Building", []() {
 
         CityManager city;
 
         auto citizen =
             city.createCitizen(
-                "Peter",
-                40,
-                "Manager"
+                "Ivan",
+                20,
+                "X"
             );
 
-        auto office1 =
-            city.createCommercialBuilding(
-                "Office1",
-                10
-            );
-
-        auto office2 =
-            city.createCommercialBuilding(
-                "Office2",
-                10
-            );
-
-        city.assignWorkplace(
-            citizen->getId(),
-            office1->getId()
-        );
-
-        city.assignWorkplace(
-            citizen->getId(),
-            office2->getId()
-        );
-
-        EXPECT_EQ(
-            office1->getOccupantCount(),
-            0
-        );
-
-        EXPECT_EQ(
-            office2->getOccupantCount(),
-            1
+        EXPECT_THROW(
+            city.moveCitizen(
+                citizen->getId(),
+                999
+            )
         );
     });
 
     //--------------------------------------------------
-    // 7. CAPACITY ENFORCEMENT
+    // 5. CAPACITY ENFORCEMENT
     //--------------------------------------------------
-    runner.run("Workplace Capacity Enforcement", []() {
+    runner.run("Movement Capacity Enforcement", []() {
 
         CityManager city;
 
-        auto office =
+        auto building =
             city.createCommercialBuilding(
-                "Tiny Office",
+                "Tiny",
                 1
             );
 
@@ -277,49 +240,132 @@ int main() {
                 "X"
             );
 
-        city.assignWorkplace(
+        city.moveCitizen(
             c1->getId(),
-            office->getId()
+            building->getId()
         );
 
         EXPECT_THROW(
-            city.assignWorkplace(
+            city.moveCitizen(
                 c2->getId(),
-                office->getId()
+                building->getId()
             )
         );
     });
 
     //--------------------------------------------------
-    // 8. MASS WORKPLACE ASSIGNMENT
+    // 6. DUPLICATE MOVE
     //--------------------------------------------------
-    runner.run("Mass Workplace Assignment", []() {
+    runner.run("Duplicate Move Same Building", []() {
 
         CityManager city;
 
-        auto factory =
-            city.createIndustrialBuilding(
-                "Mega Factory",
+        auto citizen =
+            city.createCitizen(
+                "Ivan",
+                20,
+                "X"
+            );
+
+        auto building =
+            city.createCommercialBuilding(
+                "Mall",
+                10
+            );
+
+        city.moveCitizen(
+            citizen->getId(),
+            building->getId()
+        );
+
+        city.moveCitizen(
+            citizen->getId(),
+            building->getId()
+        );
+
+        EXPECT_EQ(
+            building->getOccupantCount(),
+            1
+        );
+    });
+
+    //--------------------------------------------------
+    // 7. HOME AND LOCATION SEPARATION
+    //--------------------------------------------------
+    runner.run("Home And Location Separation", []() {
+
+        CityManager city;
+
+        auto citizen =
+            city.createCitizen(
+                "Peter",
+                40,
+                "Manager"
+            );
+
+        auto home =
+            city.createResidentialBuilding(
+                "Home",
+                10
+            );
+
+        auto office =
+            city.createCommercialBuilding(
+                "Office",
+                10
+            );
+
+        city.assignHome(
+            citizen->getId(),
+            home->getId()
+        );
+
+        city.moveCitizen(
+            citizen->getId(),
+            office->getId()
+        );
+
+        EXPECT_EQ(
+            citizen->getHome()->getId(),
+            home->getId()
+        );
+
+        EXPECT_EQ(
+            citizen->getLocation()->getId(),
+            office->getId()
+        );
+    });
+
+    //--------------------------------------------------
+    // 8. STRESS TEST
+    //--------------------------------------------------
+    runner.run("Mass Movement Stress Test", []() {
+
+        CityManager city;
+
+        auto building =
+            city.createCommercialBuilding(
+                "Mega",
                 10000
             );
 
         for (int i = 0; i < 5000; i++) {
 
-            auto c =
+            auto citizen =
                 city.createCitizen(
-                    "Worker",
+                    "User",
                     20,
-                    "Worker"
+                    "X"
                 );
 
-            city.assignWorkplace(
-                c->getId(),
-                factory->getId()
+            city.moveCitizen(
+                citizen->getId(),
+                building->getId()
             );
         }
 
         EXPECT_EQ(
-            factory->getOccupantCount(),
+            building->getOccupantCount(),
             5000
         );
     });
