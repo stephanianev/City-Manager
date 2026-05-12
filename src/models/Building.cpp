@@ -2,6 +2,31 @@
 #include "Citizen.h"
 
 #include <algorithm>
+#include <stdexcept>
+
+Building::Building(
+    int id,
+    const string& name,
+    size_t capacity
+)
+    : id(id), name(name), capacity(capacity) {
+
+    //----------------------------------
+    // Validation
+    //----------------------------------
+
+    if (name.empty()) {
+        throw invalid_argument(
+            "Building name cannot be empty"
+        );
+    }
+
+    if (capacity == 0) {
+        throw invalid_argument(
+            "Building capacity must be positive"
+        );
+    }
+}
 
 int Building::getId() const { return id; }
 string Building::getName() const { return name; }

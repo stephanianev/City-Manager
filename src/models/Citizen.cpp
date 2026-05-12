@@ -1,10 +1,28 @@
 #include "Citizen.h"
+#include <stdexcept>
 
 Citizen::Citizen(int id,
                  const string& name,
                  int age,
                  const string& profession)
-    : id(id), name(name), age(age), profession(profession) {}
+    : id(id), name(name), age(age), profession(profession) {
+
+    //----------------------------------
+    // Validation
+    //----------------------------------
+
+    if (name.empty()) {
+        throw invalid_argument(
+            "Citizen name cannot be empty"
+        );
+    }
+
+    if (age < 0 || age > 120) {
+        throw invalid_argument(
+            "Invalid citizen age"
+        );
+    }
+}
 
 int Citizen::getId() const { return id; }
 int Citizen::getAge() const { return age; }

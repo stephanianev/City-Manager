@@ -201,6 +201,209 @@ CityManager::createServiceBuilding(
     return building;
 }
 
+shared_ptr<Citizen>
+CityManager::restoreCitizen(
+    int id,
+    const string& name,
+    int age,
+    const string& profession
+) {
+
+    //----------------------------------
+    // Prevent duplicate IDs
+    //----------------------------------
+
+    if (citizens.count(id)) {
+        throw invalid_argument(
+            "Citizen ID already exists"
+        );
+    }
+
+    //----------------------------------
+    // Create citizen
+    //----------------------------------
+
+    auto citizen =
+        make_shared<Citizen>(
+            id,
+            name,
+            age,
+            profession
+        );
+
+    citizens[id] = citizen;
+
+    //----------------------------------
+    // Sync ID counter
+    //----------------------------------
+
+    nextCitizenId =
+        max(nextCitizenId, id + 1);
+
+    return citizen;
+}
+
+shared_ptr<Building> 
+CityManager::restoreResidentialBuilding(
+        int id,
+        const string& name,
+        size_t capacity
+) {
+
+    //----------------------------------
+    // Prevent duplicate IDs
+    //----------------------------------
+
+    if (buildings.count(id)) {
+        throw invalid_argument(
+            "Building ID already exists"
+        );
+    }
+
+    //----------------------------------
+    // Create building
+    //----------------------------------
+
+    auto building =
+        make_shared<ResidentialBuilding>(
+            id,
+            name,
+            capacity
+        );
+
+    buildings[id] = building;
+
+    //----------------------------------
+    // Sync ID counter
+    //----------------------------------
+
+    nextBuildingId =
+        max(nextBuildingId, id + 1);
+
+    return building;
+}
+
+shared_ptr<Building>
+CityManager::restoreCommercialBuilding(
+    int id,
+    const string& name,
+    size_t capacity
+) {
+
+    //----------------------------------
+    // Prevent duplicate IDs
+    //----------------------------------
+
+    if (buildings.count(id)) {
+        throw invalid_argument(
+            "Building ID already exists"
+        );
+    }
+
+    //----------------------------------
+    // Create building
+    //----------------------------------
+
+    auto building =
+        make_shared<CommercialBuilding>(
+            id,
+            name,
+            capacity
+        );
+
+    buildings[id] = building;
+
+    //----------------------------------
+    // Sync ID counter
+    //----------------------------------
+
+    nextBuildingId =
+        max(nextBuildingId, id + 1);
+
+    return building;
+}
+
+shared_ptr<Building>
+CityManager::restoreIndustrialBuilding(
+    int id,
+    const string& name,
+    size_t capacity
+) {
+
+    //----------------------------------
+    // Prevent duplicate IDs
+    //----------------------------------
+
+    if (buildings.count(id)) {
+        throw invalid_argument(
+            "Building ID already exists"
+        );
+    }
+
+    //----------------------------------
+    // Create building
+    //----------------------------------
+
+    auto building =
+        make_shared<IndustrialBuilding>(
+            id,
+            name,
+            capacity
+        );
+
+    buildings[id] = building;
+
+    //----------------------------------
+    // Sync ID counter
+    //----------------------------------
+
+    nextBuildingId =
+        max(nextBuildingId, id + 1);
+
+    return building;
+}
+
+
+shared_ptr<Building>
+CityManager::restoreServiceBuilding(
+    int id,
+    const string& name,
+    size_t capacity
+) {
+
+    //----------------------------------
+    // Prevent duplicate IDs
+    //----------------------------------
+
+    if (buildings.count(id)) {
+        throw invalid_argument(
+            "Building ID already exists"
+        );
+    }
+
+    //----------------------------------
+    // Create building
+    //----------------------------------
+
+    auto building =
+        make_shared<ServiceBuilding>(
+            id,
+            name,
+            capacity
+        );
+
+    buildings[id] = building;
+
+    //----------------------------------
+    // Sync ID counter
+    //----------------------------------
+
+    nextBuildingId =
+        max(nextBuildingId, id + 1);
+
+    return building;
+}
+
 void CityManager::assignWorkplace(
     int citizenId,
     int buildingId

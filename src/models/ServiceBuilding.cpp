@@ -5,11 +5,7 @@ ServiceBuilding::ServiceBuilding(
     int id,
     const string& name,
     size_t capacity
-) {
-    this->id = id;
-    this->name = name;
-    this->capacity = capacity;
-}
+) : Building(id, name, capacity) {}
 
 bool ServiceBuilding::canAcceptCitizen(
     const Citizen&

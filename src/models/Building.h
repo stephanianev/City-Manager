@@ -24,6 +24,11 @@ protected:
     void removeOccupant(int citizenId);
 
 public:
+    Building(int id,
+             const string& name,
+             size_t capacity
+    );
+    
     virtual ~Building() = default;
 
     int getId() const;

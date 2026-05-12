@@ -30,6 +30,9 @@ private:
     getBuildingOrThrow(int id) const;
 
 public:
+    //--------------------------------------------------
+    // Runtime Creation Operations
+    //--------------------------------------------------
     shared_ptr<Citizen> createCitizen(
         const string& name,
         int age,
@@ -52,6 +55,40 @@ public:
     );
 
     shared_ptr<ServiceBuilding> createServiceBuilding(
+        const string& name,
+        size_t capacity
+    );
+
+    //--------------------------------------------------
+    // Restoration Operations
+    //--------------------------------------------------
+    shared_ptr<Citizen> restoreCitizen(
+    int id,
+    const string& name,
+    int age,
+    const string& profession
+    );
+
+    shared_ptr<Building> restoreResidentialBuilding(
+        int id,
+        const string& name,
+        size_t capacity
+    );
+
+    shared_ptr<Building> restoreCommercialBuilding(
+        int id,
+        const string& name,
+        size_t capacity
+    );
+
+    shared_ptr<Building> restoreIndustrialBuilding(
+        int id,
+        const string& name,
+        size_t capacity
+    );
+
+    shared_ptr<Building> restoreServiceBuilding(
+        int id,
         const string& name,
         size_t capacity
     );

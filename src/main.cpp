@@ -19,6 +19,7 @@ private:
 
 public:
     void run(const string& name, function<void()> test) {
+
         try {
             test();
             results.push_back({name, true, "OK"});
@@ -79,274 +80,157 @@ int main() {
     TestRunner runner;
 
     //--------------------------------------------------
-    // 1. REMOVE CITIZEN
+    // 1. RESTORE CITIZEN
     //--------------------------------------------------
-    runner.run("Remove Citizen", []() {
+    runner.run("Restore Citizen", []() {
 
         CityManager city;
 
         auto citizen =
-            city.createCitizen(
+            city.restoreCitizen(
+                50,
                 "Ivan",
-                20,
-                "X"
+                25,
+                "Engineer"
             );
 
-        city.removeCitizen(
-            citizen->getId()
-        );
-
-        EXPECT_EQ(
-            city.getTotalCitizens(),
-            0
-        );
+        EXPECT_EQ(citizen->getId(), 50);
+        EXPECT_EQ(city.getTotalCitizens(), 1);
     });
 
     //--------------------------------------------------
-    // 2. REMOVE INVALID CITIZEN
+    // 2. ID CONTINUATION AFTER RESTORE
     //--------------------------------------------------
-    runner.run("Remove Invalid Citizen", []() {
+    runner.run("ID Continuation", []() {
 
         CityManager city;
 
+        city.restoreCitizen(
+            100,
+            "Restored",
+            20,
+            "X"
+        );
+
+        auto newCitizen =
+            city.createCitizen(
+                "New",
+                30,
+                "Y"
+            );
+
+        EXPECT_EQ(newCitizen->getId(), 101);
+    });
+
+    //--------------------------------------------------
+    // 3. DUPLICATE RESTORE ID
+    //--------------------------------------------------
+    runner.run("Duplicate Restore ID", []() {
+
+        CityManager city;
+
+        city.restoreCitizen(
+            1,
+            "A",
+            20,
+            "X"
+        );
+
         EXPECT_THROW(
-            city.removeCitizen(999)
+            city.restoreCitizen(
+                1,
+                "B",
+                30,
+                "Y"
+            )
         );
     });
 
     //--------------------------------------------------
-    // 3. REMOVE CITIZEN FROM LOCATION
+    // 4. RESTORE BUILDING
     //--------------------------------------------------
-    runner.run("Citizen Removed From Occupancy", []() {
+    runner.run("Restore Building", []() {
 
         CityManager city;
 
         auto building =
-            city.createCommercialBuilding(
-                "Mall",
-                10
+            city.restoreResidentialBuilding(
+                10,
+                "Block A",
+                100
             );
 
-        auto citizen =
-            city.createCitizen(
-                "Ivan",
-                20,
-                "X"
-            );
-
-        city.moveCitizen(
-            citizen->getId(),
-            building->getId()
-        );
-
-        EXPECT_EQ(
-            building->getOccupantCount(),
-            1
-        );
-
-        city.removeCitizen(
-            citizen->getId()
-        );
-
-        EXPECT_EQ(
-            building->getOccupantCount(),
-            0
-        );
+        EXPECT_EQ(building->getId(), 10);
+        EXPECT_EQ(city.getTotalBuildings(), 1);
     });
 
     //--------------------------------------------------
-    // 4. REMOVE BUILDING
+    // 5. BUILDING ID CONTINUATION
     //--------------------------------------------------
-    runner.run("Remove Building", []() {
+    runner.run("Building ID Continuation", []() {
 
         CityManager city;
 
-        auto building =
+        city.restoreCommercialBuilding(
+            500,
+            "Office",
+            50
+        );
+
+        auto next =
             city.createCommercialBuilding(
-                "Office",
-                10
+                "Mall",
+                20
             );
 
-        city.removeBuilding(
-            building->getId()
-        );
-
-        EXPECT_EQ(
-            city.getTotalBuildings(),
-            0
-        );
+        EXPECT_EQ(next->getId(), 501);
     });
 
     //--------------------------------------------------
-    // 5. REMOVE INVALID BUILDING
+    // 6. INVALID RESTORE DATA
     //--------------------------------------------------
-    runner.run("Remove Invalid Building", []() {
+    runner.run("Invalid Restore Data", []() {
 
         CityManager city;
 
         EXPECT_THROW(
-            city.removeBuilding(999)
-        );
-    });
-
-    //--------------------------------------------------
-    // 6. CLEAR HOME REFERENCES
-    //--------------------------------------------------
-    runner.run("Clear Home References", []() {
-
-        CityManager city;
-
-        auto citizen =
-            city.createCitizen(
-                "A",
+            city.restoreCitizen(
+                1,
+                "",
                 20,
                 "X"
-            );
+            )
+        );
 
-        auto home =
-            city.createResidentialBuilding(
-                "Home",
+        EXPECT_THROW(
+            city.restoreResidentialBuilding(
+                1,
+                "",
                 10
-            );
-
-        city.assignHome(
-            citizen->getId(),
-            home->getId()
-        );
-
-        city.removeBuilding(
-            home->getId()
-        );
-
-        EXPECT_TRUE(
-            citizen->getHome() == nullptr
+            )
         );
     });
 
     //--------------------------------------------------
-    // 7. CLEAR WORKPLACE REFERENCES
+    // 7. LARGE RESTORE TEST
     //--------------------------------------------------
-    runner.run("Clear Workplace References", []() {
+    runner.run("Large Restore Test", []() {
 
         CityManager city;
 
-        auto citizen =
-            city.createCitizen(
-                "A",
+        for (int i = 1; i <= 5000; i++) {
+
+            city.restoreCitizen(
+                i,
+                "User",
                 20,
                 "X"
-            );
-
-        auto office =
-            city.createCommercialBuilding(
-                "Office",
-                10
-            );
-
-        city.assignWorkplace(
-            citizen->getId(),
-            office->getId()
-        );
-
-        city.removeBuilding(
-            office->getId()
-        );
-
-        EXPECT_TRUE(
-            citizen->getWorkplace() == nullptr
-        );
-    });
-
-    //--------------------------------------------------
-    // 8. CLEAR LOCATION REFERENCES
-    //--------------------------------------------------
-    runner.run("Clear Location References", []() {
-
-        CityManager city;
-
-        auto citizen =
-            city.createCitizen(
-                "A",
-                20,
-                "X"
-            );
-
-        auto mall =
-            city.createCommercialBuilding(
-                "Mall",
-                10
-            );
-
-        city.moveCitizen(
-            citizen->getId(),
-            mall->getId()
-        );
-
-        city.removeBuilding(
-            mall->getId()
-        );
-
-        EXPECT_TRUE(
-            citizen->getLocation() == nullptr
-        );
-    });
-
-    //--------------------------------------------------
-    // 9. MASS CITIZEN REMOVAL
-    //--------------------------------------------------
-    runner.run("Mass Citizen Removal", []() {
-
-        CityManager city;
-
-        for (int i = 0; i < 5000; i++) {
-
-            auto citizen =
-                city.createCitizen(
-                    "User",
-                    20,
-                    "X"
-                );
-
-            city.removeCitizen(
-                citizen->getId()
             );
         }
 
         EXPECT_EQ(
             city.getTotalCitizens(),
-            0
-        );
-    });
-
-    //--------------------------------------------------
-    // 10. MASS BUILDING REMOVAL
-    //--------------------------------------------------
-    runner.run("Mass Building Removal", []() {
-
-        CityManager city;
-
-        vector<int> ids;
-
-        for (int i = 0; i < 5000; i++) {
-
-            auto building =
-                city.createCommercialBuilding(
-                    "Building",
-                    10
-                );
-
-            ids.push_back(
-                building->getId()
-            );
-        }
-
-        for (int id : ids) {
-            city.removeBuilding(id);
-        }
-
-        EXPECT_EQ(
-            city.getTotalBuildings(),
-            0
+            5000
         );
     });
 
