@@ -11,6 +11,38 @@ bool CityManager::isBlank(const string& str) const {
         });
 }
 
+shared_ptr<Citizen>
+CityManager::getCitizenOrThrow(
+    int id
+) const {
+
+    auto it = citizens.find(id);
+
+    if (it == citizens.end()) {
+        throw invalid_argument(
+            "Citizen does not exist"
+        );
+    }
+
+    return it->second;
+}
+
+shared_ptr<Building>
+CityManager::getBuildingOrThrow(
+    int id
+) const {
+
+    auto it = buildings.find(id);
+
+    if (it == buildings.end()) {
+        throw invalid_argument(
+            "Building does not exist"
+        );
+    }
+
+    return it->second;
+}
+
 shared_ptr<Citizen> CityManager::createCitizen(
     const string& name,
     int age,
@@ -175,31 +207,12 @@ void CityManager::assignWorkplace(
 ) {
 
     //--------------------------------------
-    // Validate citizen
+    // Validate citizen and building
     //--------------------------------------
 
-    auto citizenIt = citizens.find(citizenId);
+    auto citizen = getCitizenOrThrow(citizenId);
 
-    if (citizenIt == citizens.end()) {
-        throw invalid_argument(
-            "Citizen does not exist"
-        );
-    }
-
-    //--------------------------------------
-    // Validate building
-    //--------------------------------------
-
-    auto buildingIt = buildings.find(buildingId);
-
-    if (buildingIt == buildings.end()) {
-        throw invalid_argument(
-            "Building does not exist"
-        );
-    }
-
-    auto citizen = citizenIt->second;
-    auto building = buildingIt->second;
+    auto building = getBuildingOrThrow(buildingId);
 
     //--------------------------------------
     // Residential buildings forbidden
@@ -244,31 +257,12 @@ void CityManager::moveCitizen(
 ) {
 
     //--------------------------------------
-    // Validate citizen
+    // Validate citizen and building
     //--------------------------------------
 
-    auto citizenIt = citizens.find(citizenId);
+    auto citizen = getCitizenOrThrow(citizenId);
 
-    if (citizenIt == citizens.end()) {
-        throw invalid_argument(
-            "Citizen does not exist"
-        );
-    }
-
-    //--------------------------------------
-    // Validate building
-    //--------------------------------------
-
-    auto buildingIt = buildings.find(buildingId);
-
-    if (buildingIt == buildings.end()) {
-        throw invalid_argument(
-            "Building does not exist"
-        );
-    }
-
-    auto citizen = citizenIt->second;
-    auto building = buildingIt->second;
+    auto building = getBuildingOrThrow(buildingId);
 
     //--------------------------------------
     // Capacity validation
@@ -317,31 +311,12 @@ void CityManager::assignHome(
 ) {
 
     //--------------------------------------
-    // Validate citizen
+    // Validate citizen and building
     //--------------------------------------
 
-    auto citizenIt = citizens.find(citizenId);
+    auto citizen = getCitizenOrThrow(citizenId);
 
-    if (citizenIt == citizens.end()) {
-        throw invalid_argument(
-            "Citizen does not exist"
-        );
-    }
-
-    //--------------------------------------
-    // Validate building
-    //--------------------------------------
-
-    auto buildingIt = buildings.find(buildingId);
-
-    if (buildingIt == buildings.end()) {
-        throw invalid_argument(
-            "Building does not exist"
-        );
-    }
-
-    auto citizen = citizenIt->second;
-    auto building = buildingIt->second;
+    auto building = getBuildingOrThrow(buildingId);
 
     //--------------------------------------
     // Building type validation
@@ -388,15 +363,7 @@ void CityManager::removeCitizen(
     // Validate citizen
     //--------------------------------------
 
-    auto citizenIt = citizens.find(citizenId);
-
-    if (citizenIt == citizens.end()) {
-        throw invalid_argument(
-            "Citizen does not exist"
-        );
-    }
-
-    auto citizen = citizenIt->second;
+    auto citizen = getCitizenOrThrow(citizenId);
 
     //--------------------------------------
     // Remove from current location
@@ -414,7 +381,7 @@ void CityManager::removeCitizen(
     // Remove citizen from storage
     //--------------------------------------
 
-    citizens.erase(citizenIt);
+    citizens.erase(citizenId);
 }
 
 void CityManager::removeBuilding(
@@ -425,15 +392,7 @@ void CityManager::removeBuilding(
     // Validate building
     //--------------------------------------
 
-    auto buildingIt = buildings.find(buildingId);
-
-    if (buildingIt == buildings.end()) {
-        throw invalid_argument(
-            "Building does not exist"
-        );
-    }
-
-    auto building = buildingIt->second;
+    auto building = getBuildingOrThrow(buildingId);   
 
     //--------------------------------------
     // Clear citizen references
@@ -482,7 +441,7 @@ void CityManager::removeBuilding(
     // Remove building
     //--------------------------------------
 
-    buildings.erase(buildingIt);
+    buildings.erase(buildingId);
 }
 
 vector<shared_ptr<Citizen>>
@@ -507,15 +466,9 @@ CityManager::listCitizensInBuilding(
     int buildingId
 ) const {
 
-    auto it = buildings.find(buildingId);
+    auto building = getBuildingOrThrow(buildingId);
 
-    if (it == buildings.end()) {
-        throw invalid_argument(
-            "Building does not exist"
-        );
-    }
-
-    return it->second->getOccupants();
+    return building->getOccupants();
 }
 
 vector<shared_ptr<Building>>
@@ -571,15 +524,7 @@ size_t CityManager::getUnemployedCount() const {
 
 double CityManager::getOccupancyRate(int buildingId) const {
 
-    auto it = buildings.find(buildingId);
-
-    if (it == buildings.end()) {
-        throw invalid_argument(
-            "Building does not exist"
-        );
-    }
-
-    auto building = it->second;
+    auto building = getBuildingOrThrow(buildingId);
 
     if (building->capacity == 0) {
         return 0.0;

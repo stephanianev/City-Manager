@@ -23,6 +23,12 @@ private:
 
     bool isBlank(const string& str) const;
 
+    shared_ptr<Citizen>
+    getCitizenOrThrow(int id) const;
+
+    shared_ptr<Building>
+    getBuildingOrThrow(int id) const;
+
 public:
     shared_ptr<Citizen> createCitizen(
         const string& name,
