@@ -1,5 +1,0 @@
-[BUILDINGS]
-2|Commercial|School|40
-1|Residential|Home|50
-[CITIZENS]
-1|Maria|30|Teacher|1|2|2

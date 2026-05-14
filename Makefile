@@ -9,7 +9,10 @@ SRC = src/main.cpp \
       src/models/CommercialBuilding.cpp \
       src/models/IndustrialBuilding.cpp \
       src/models/ServiceBuilding.cpp \
-      src/serialization/CitySerializer.cpp
+      src/serialization/CitySerializer.cpp \
+      src/events/EventManager.cpp \
+      src/events/ModelEvents.cpp \
+      src/events/Event.cpp
 
 TARGET = app
 
