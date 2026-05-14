@@ -93,6 +93,9 @@ public:
         size_t capacity
     );
 
+    const unordered_map<int, shared_ptr<Citizen>>&getCitizens() const;
+    const unordered_map<int, shared_ptr<Building>>&getBuildings() const;
+
     void assignWorkplace(int citizenId, int buildingId);
     void moveCitizen(int citizenId, int buildingId);
 

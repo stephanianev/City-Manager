@@ -4,6 +4,7 @@
 #include <functional>
 
 #include "core/CityManager.h"
+#include "serialization/CitySerializer.h"
 
 using namespace std;
 
@@ -18,7 +19,8 @@ private:
     vector<TestResult> results;
 
 public:
-    void run(const string& name, function<void()> test) {
+    void run(const string& name,
+             function<void()> test) {
 
         try {
             test();
@@ -40,11 +42,13 @@ public:
 
         for (const auto& r : results) {
 
-            cout << (r.passed ? "[PASS] " : "[FAIL] ")
+            cout << (r.passed ? "[PASS] "
+                              : "[FAIL] ")
                  << r.name;
 
             if (!r.passed) {
-                cout << " -> " << r.message;
+                cout << " -> "
+                     << r.message;
             }
 
             cout << endl;
@@ -70,167 +74,172 @@ public:
 #define EXPECT_EQ(a, b) \
     if (!((a) == (b))) throw runtime_error("Expected equality failed");
 
-#define EXPECT_THROW(stmt) \
-    { bool thrown = false; \
-      try { stmt; } catch (...) { thrown = true; } \
-      if (!thrown) throw runtime_error("Expected exception not thrown"); }
-
 int main() {
 
     TestRunner runner;
 
     //--------------------------------------------------
-    // 1. RESTORE CITIZEN
+    // 1. SAVE + LOAD BASIC
     //--------------------------------------------------
-    runner.run("Restore Citizen", []() {
+    runner.run("Save And Load Basic", []() {
 
         CityManager city;
 
         auto citizen =
-            city.restoreCitizen(
-                50,
+            city.createCitizen(
                 "Ivan",
                 25,
                 "Engineer"
             );
 
-        EXPECT_EQ(citizen->getId(), 50);
-        EXPECT_EQ(city.getTotalCitizens(), 1);
-    });
-
-    //--------------------------------------------------
-    // 2. ID CONTINUATION AFTER RESTORE
-    //--------------------------------------------------
-    runner.run("ID Continuation", []() {
-
-        CityManager city;
-
-        city.restoreCitizen(
-            100,
-            "Restored",
-            20,
-            "X"
-        );
-
-        auto newCitizen =
-            city.createCitizen(
-                "New",
-                30,
-                "Y"
-            );
-
-        EXPECT_EQ(newCitizen->getId(), 101);
-    });
-
-    //--------------------------------------------------
-    // 3. DUPLICATE RESTORE ID
-    //--------------------------------------------------
-    runner.run("Duplicate Restore ID", []() {
-
-        CityManager city;
-
-        city.restoreCitizen(
-            1,
-            "A",
-            20,
-            "X"
-        );
-
-        EXPECT_THROW(
-            city.restoreCitizen(
-                1,
-                "B",
-                30,
-                "Y"
-            )
-        );
-    });
-
-    //--------------------------------------------------
-    // 4. RESTORE BUILDING
-    //--------------------------------------------------
-    runner.run("Restore Building", []() {
-
-        CityManager city;
-
-        auto building =
-            city.restoreResidentialBuilding(
-                10,
+        auto home =
+            city.createResidentialBuilding(
                 "Block A",
                 100
             );
 
-        EXPECT_EQ(building->getId(), 10);
-        EXPECT_EQ(city.getTotalBuildings(), 1);
+        city.assignHome(
+            citizen->getId(),
+            home->getId()
+        );
+
+        CitySerializer::saveToFile(
+            city,
+            "city_save.txt"
+        );
+
+        CityManager loaded;
+
+        CitySerializer::loadFromFile(
+            loaded,
+            "city_save.txt"
+        );
+
+        EXPECT_EQ(
+            loaded.getTotalCitizens(),
+            1
+        );
+
+        EXPECT_EQ(
+            loaded.getTotalBuildings(),
+            1
+        );
     });
 
     //--------------------------------------------------
-    // 5. BUILDING ID CONTINUATION
+    // 2. RELATIONSHIP RESTORATION
     //--------------------------------------------------
-    runner.run("Building ID Continuation", []() {
+    runner.run("Relationship Restoration", []() {
 
         CityManager city;
 
-        city.restoreCommercialBuilding(
-            500,
-            "Office",
-            50
-        );
-
-        auto next =
-            city.createCommercialBuilding(
-                "Mall",
-                20
+        auto citizen =
+            city.createCitizen(
+                "Maria",
+                30,
+                "Teacher"
             );
 
-        EXPECT_EQ(next->getId(), 501);
+        auto home =
+            city.createResidentialBuilding(
+                "Home",
+                50
+            );
+
+        auto work =
+            city.createCommercialBuilding(
+                "School",
+                40
+            );
+
+        city.assignHome(
+            citizen->getId(),
+            home->getId()
+        );
+
+        city.assignWorkplace(
+            citizen->getId(),
+            work->getId()
+        );
+
+        city.moveCitizen(
+            citizen->getId(),
+            work->getId()
+        );
+
+        CitySerializer::saveToFile(
+            city,
+            "city_save.txt"
+        );
+
+        CityManager loaded;
+
+        CitySerializer::loadFromFile(
+            loaded,
+            "city_save.txt"
+        );
+
+        auto loadedCitizen =
+            loaded.getCitizens()
+                  .at(citizen->getId());
+
+        EXPECT_TRUE(
+            loadedCitizen->getHome()
+                != nullptr
+        );
+
+        EXPECT_TRUE(
+            loadedCitizen->getWorkplace()
+                != nullptr
+        );
+
+        EXPECT_TRUE(
+            loadedCitizen->getLocation()
+                != nullptr
+        );
     });
 
     //--------------------------------------------------
-    // 6. INVALID RESTORE DATA
+    // 3. LARGE SAVE/LOAD
     //--------------------------------------------------
-    runner.run("Invalid Restore Data", []() {
+    runner.run("Large Save Load", []() {
 
         CityManager city;
 
-        EXPECT_THROW(
-            city.restoreCitizen(
-                1,
-                "",
+        for (int i = 0; i < 2000; i++) {
+
+            city.createCitizen(
+                "User" + to_string(i),
                 20,
                 "X"
-            )
-        );
+            );
 
-        EXPECT_THROW(
-            city.restoreResidentialBuilding(
-                1,
-                "",
+            city.createCommercialBuilding(
+                "Building" + to_string(i),
                 10
-            )
-        );
-    });
-
-    //--------------------------------------------------
-    // 7. LARGE RESTORE TEST
-    //--------------------------------------------------
-    runner.run("Large Restore Test", []() {
-
-        CityManager city;
-
-        for (int i = 1; i <= 5000; i++) {
-
-            city.restoreCitizen(
-                i,
-                "User",
-                20,
-                "X"
             );
         }
 
+        CitySerializer::saveToFile(
+            city,
+            "large_save.txt"
+        );
+
+        CityManager loaded;
+
+        CitySerializer::loadFromFile(
+            loaded,
+            "large_save.txt"
+        );
+
         EXPECT_EQ(
-            city.getTotalCitizens(),
-            5000
+            loaded.getTotalCitizens(),
+            2000
+        );
+
+        EXPECT_EQ(
+            loaded.getTotalBuildings(),
+            2000
         );
     });
 

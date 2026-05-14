@@ -8,7 +8,8 @@ SRC = src/main.cpp \
       src/models/ResidentialBuilding.cpp \
       src/models/CommercialBuilding.cpp \
       src/models/IndustrialBuilding.cpp \
-      src/models/ServiceBuilding.cpp
+      src/models/ServiceBuilding.cpp \
+      src/serialization/CitySerializer.cpp
 
 TARGET = app
 

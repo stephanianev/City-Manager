@@ -4,6 +4,16 @@
 #include <cctype>
 #include <stdexcept>
 
+const unordered_map<int, shared_ptr<Citizen>>&
+CityManager::getCitizens() const {
+    return citizens;
+}
+
+const unordered_map<int, shared_ptr<Building>>&
+CityManager::getBuildings() const {
+    return buildings;
+}
+
 bool CityManager::isBlank(const string& str) const {
     return all_of(str.begin(), str.end(),
         [](unsigned char c) {
