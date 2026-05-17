@@ -12,7 +12,8 @@ SRC = src/main.cpp \
       src/serialization/CitySerializer.cpp \
       src/events/EventManager.cpp \
       src/events/ModelEvents.cpp \
-      src/events/Event.cpp
+      src/events/Event.cpp \
+      src/utils/Validation.cpp
 
 TARGET = app
 

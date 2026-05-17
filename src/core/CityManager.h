@@ -152,6 +152,13 @@ public:
 
     double getOccupancyRate(int buildingId) const;
 
+    double getAverageCitizenAge() const;
+
+    double getEmploymentRate() const;
+
+    unordered_map<string, double>
+    getAverageOccupancyByType() const;
+
     //--------------------------------------------------
     // Events
     //--------------------------------------------------

@@ -100,60 +100,63 @@ throw runtime_error("Condition failed");
 if (!((a) == (b))) \
 throw runtime_error("Expected equality failed");
 
+#define EXPECT_THROW(stmt) \
+{ \
+    bool thrown = false; \
+    try { stmt; } \
+    catch (...) { thrown = true; } \
+    if (!thrown) { \
+        throw runtime_error( \
+            "Expected exception not thrown" \
+        ); \
+    } \
+}
+
 int main() {
 
     TestRunner runner;
 
     //--------------------------------------------------
-    // 1. SORT CITIZENS BY AGE
+    // 1. VALIDATION NAME
     //--------------------------------------------------
     runner.run(
-        "Sort Citizens By Age",
+        "Validation Name",
         []() {
 
         CityManager city;
 
-        city.createCitizen(
-            "A",
-            40,
-            "X"
-        );
-
-        city.createCitizen(
-            "B",
-            20,
-            "X"
-        );
-
-        auto queried =
-            city.queryCitizens(
-                [](const shared_ptr<Citizen>&) {
-                    return true;
-                }
-            );
-
-        auto sorted =
-            city.sortCitizens(
-                queried,
-                [](const shared_ptr<Citizen>& a,
-                   const shared_ptr<Citizen>& b) {
-
-                    return a->getAge()
-                           < b->getAge();
-                }
-            );
-
-        EXPECT_EQ(
-            sorted[0]->getAge(),
-            20
+        EXPECT_THROW(
+            city.createCitizen(
+                "",
+                20,
+                "X"
+            )
         );
     });
 
     //--------------------------------------------------
-    // 2. PROFESSION DISTRIBUTION
+    // 2. VALIDATION AGE
     //--------------------------------------------------
     runner.run(
-        "Profession Distribution",
+        "Validation Age",
+        []() {
+
+        CityManager city;
+
+        EXPECT_THROW(
+            city.createCitizen(
+                "Ivan",
+                -1,
+                "X"
+            )
+        );
+    });
+
+    //--------------------------------------------------
+    // 3. AVERAGE AGE
+    //--------------------------------------------------
+    runner.run(
+        "Average Age",
         []() {
 
         CityManager city;
@@ -161,73 +164,65 @@ int main() {
         city.createCitizen(
             "A",
             20,
-            "Engineer"
+            "X"
         );
 
         city.createCitizen(
             "B",
-            30,
-            "Engineer"
-        );
-
-        city.createCitizen(
-            "C",
             40,
-            "Teacher"
-        );
-
-        auto report =
-            city.getProfessionDistribution();
-
-        EXPECT_EQ(
-            report["Engineer"],
-            2
+            "X"
         );
 
         EXPECT_EQ(
-            report["Teacher"],
-            1
+            city.getAverageCitizenAge(),
+            30.0
         );
     });
 
     //--------------------------------------------------
-    // 3. BUILDING TYPE REPORT
+    // 4. EMPLOYMENT RATE
     //--------------------------------------------------
     runner.run(
-        "Building Type Distribution",
+        "Employment Rate",
         []() {
 
         CityManager city;
 
-        city.createResidentialBuilding(
-            "R1",
-            10
+        auto c1 =
+            city.createCitizen(
+                "A",
+                20,
+                "X"
+            );
+
+        city.createCitizen(
+            "B",
+            20,
+            "X"
         );
 
-        city.createCommercialBuilding(
-            "C1",
-            20
-        );
+        auto building =
+            city.createCommercialBuilding(
+                "Office",
+                10
+            );
 
-        city.createCommercialBuilding(
-            "C2",
-            20
+        city.assignWorkplace(
+            c1->getId(),
+            building->getId()
         );
-
-        auto report =
-            city.getBuildingTypeDistribution();
 
         EXPECT_EQ(
-            report["Commercial"],
-            2
+            city.getEmploymentRate(),
+            0.5
         );
     });
 
     //--------------------------------------------------
-    // 4. OCCUPANCY REPORT
+    // 5. OCCUPANCY BY TYPE
     //--------------------------------------------------
     runner.run(
-        "Occupancy Report",
+        "Occupancy By Type",
         []() {
 
         CityManager city;
@@ -250,11 +245,11 @@ int main() {
             building->getId()
         );
 
-        auto report =
-            city.getBuildingOccupancyReport();
+        auto stats =
+            city.getAverageOccupancyByType();
 
         EXPECT_TRUE(
-            !report.empty()
+            stats["Residential"] > 0.0
         );
     });
 

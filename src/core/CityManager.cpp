@@ -1,5 +1,6 @@
 #include "CityManager.h"
 #include "../events/ModelEvents.h"
+#include "../utils/Validation.h"
 
 #include <algorithm>
 #include <cctype>
@@ -59,17 +60,8 @@ shared_ptr<Citizen> CityManager::createCitizen(
     int age,
     const string& profession
 ) {
-    if (name.empty() || isBlank(name)) {
-        throw invalid_argument(
-            "Citizen name cannot be empty"
-        );
-    }
-
-    if (age < 0 || age > 120) {
-        throw invalid_argument(
-            "Age must be between 0 and 120"
-        );
-    }
+    Validation::validateCitizenName(name);
+    Validation::validateCitizenAge(age);
 
     int id = nextCitizenId++;
 
@@ -97,17 +89,8 @@ CityManager::createResidentialBuilding(
     const string& name,
     size_t capacity
 ) {
-    if (name.empty() || isBlank(name)) {
-        throw invalid_argument(
-            "Building name cannot be empty"
-        );
-    }
-
-    if (capacity == 0) {
-        throw invalid_argument(
-            "Building capacity cannot be zero"
-        );
-    }
+    Validation::validateBuildingName(name);
+    Validation::validateBuildingCapacity(capacity);
 
     int id = nextBuildingId++;
 
@@ -137,17 +120,8 @@ CityManager::createCommercialBuilding(
     size_t capacity
 ) {
 
-    if (name.empty() || isBlank(name)) {
-        throw invalid_argument(
-            "Building name cannot be empty"
-        );
-    }
-
-    if (capacity == 0) {
-        throw invalid_argument(
-            "Building capacity cannot be zero"
-        );
-    }
+    Validation::validateBuildingName(name);
+    Validation::validateBuildingCapacity(capacity);
 
     int id = nextBuildingId++;
 
@@ -177,17 +151,8 @@ CityManager::createIndustrialBuilding(
     size_t capacity
 ) {
 
-    if (name.empty() || isBlank(name)) {
-        throw invalid_argument(
-            "Building name cannot be empty"
-        );
-    }
-
-    if (capacity == 0) {
-        throw invalid_argument(
-            "Building capacity cannot be zero"
-        );
-    }
+    Validation::validateBuildingName(name);
+    Validation::validateBuildingCapacity(capacity);
 
     int id = nextBuildingId++;
 
@@ -217,17 +182,8 @@ CityManager::createServiceBuilding(
     size_t capacity
 ) {
 
-    if (name.empty() || isBlank(name)) {
-        throw invalid_argument(
-            "Building name cannot be empty"
-        );
-    }
-
-    if (capacity == 0) {
-        throw invalid_argument(
-            "Building capacity cannot be zero"
-        );
-    }
+    Validation::validateBuildingName(name);
+    Validation::validateBuildingCapacity(capacity);
 
     int id = nextBuildingId++;
 
@@ -854,6 +810,92 @@ double CityManager::getOccupancyRate(int buildingId) const {
 
     return static_cast<double>(building->getOccupantCount()) /
            building->capacity;
+}
+
+double CityManager::getAverageCitizenAge() const {
+
+    if (citizens.empty()) {
+        return 0.0;
+    }
+
+    int totalAge = 0;
+
+    for (const auto& [id, citizen]
+         : citizens) {
+
+        totalAge += citizen->getAge();
+    }
+
+    return static_cast<double>(
+        totalAge
+    ) / citizens.size();
+}
+
+double CityManager::getEmploymentRate() const {
+
+    if (citizens.empty()) {
+        return 0.0;
+    }
+
+    int employed = 0;
+
+    for (const auto& [id, citizen]
+         : citizens) {
+
+        if (citizen->getWorkplace()) {
+            employed++;
+        }
+    }
+
+    return static_cast<double>(
+        employed
+    ) / citizens.size();
+}
+
+unordered_map<string, double>
+CityManager::getAverageOccupancyByType() const {
+
+    unordered_map<string, int>
+        totalOccupants;
+
+    unordered_map<string, int>
+        totalCapacity;
+
+    for (const auto& [id, building]
+         : buildings) {
+
+        totalOccupants[
+            building->getType()
+        ]
+        += building->getOccupantCount();
+
+        totalCapacity[
+            building->getType()
+        ]
+        += building->getCapacity();
+    }
+
+    unordered_map<string, double>
+        result;
+
+    for (const auto& [type, capacity]
+         : totalCapacity) {
+
+        if (capacity == 0) {
+
+            result[type] = 0.0;
+        }
+        else {
+
+            result[type] =
+                static_cast<double>(
+                    totalOccupants[type]
+                )
+                / capacity;
+        }
+    }
+
+    return result;
 }
 
 const EventManager& CityManager::getEventManager() const {return eventManager;}
