@@ -731,6 +731,48 @@ CityManager::findBuildingsWithCapacity() const {
     return result;
 }
 
+vector<shared_ptr<Citizen>> CityManager::findCitizensByName(const string& name) const {
+    if (name.empty() || isBlank(name)) {
+        throw invalid_argument("Search name cannot be empty or blank");
+    }
+
+    vector<shared_ptr<Citizen>> result;
+
+    for (const auto& [id, citizen] : citizens) {
+        if (citizen->getName() == name) {
+            result.push_back(citizen);
+        }
+    }
+
+    sort(result.begin(), result.end(),
+        [](const shared_ptr<Citizen>& a, const shared_ptr<Citizen>& b) {
+            return a->getId() < b->getId();
+        });
+
+    return result;
+}
+
+vector<shared_ptr<Building>> CityManager::findBuildingsByName(const string& name) const {
+    if (name.empty() || isBlank(name)) {
+        throw invalid_argument("Search name cannot be empty or blank");
+    }
+
+    vector<shared_ptr<Building>> result;
+
+    for (const auto& [id, building] : buildings) {
+        if (building->getName() == name) {
+            result.push_back(building);
+        }
+    }
+
+    sort(result.begin(), result.end(),
+        [](const shared_ptr<Building>& a, const shared_ptr<Building>& b) {
+            return a->getId() < b->getId();
+        });
+
+    return result;
+}
+
 vector<shared_ptr<Citizen>>
 CityManager::queryCitizens(
     function<bool(

@@ -4,6 +4,7 @@
 #include <memory>
 #include <string>
 #include <functional>
+#include <vector>
 
 #include "../models/Citizen.h"
 #include "../models/Building.h"
@@ -123,6 +124,10 @@ public:
     vector<shared_ptr<Citizen>> listCitizensInBuilding(int buildingId) const;
 
     vector<shared_ptr<Building>> findBuildingsWithCapacity() const;
+
+    vector<shared_ptr<Citizen>> findCitizensByName(const string& name) const;
+    
+    vector<shared_ptr<Building>> findBuildingsByName(const string& name) const;
 
     vector<shared_ptr<Citizen>>
     queryCitizens(
