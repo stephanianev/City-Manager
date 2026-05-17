@@ -768,6 +768,46 @@ CityManager::findBuildingsWithCapacity() const {
     return result;
 }
 
+vector<shared_ptr<Citizen>>
+CityManager::queryCitizens(
+    function<bool(
+        const shared_ptr<Citizen>&
+    )> predicate
+) const {
+
+    vector<shared_ptr<Citizen>> result;
+
+    for (const auto& [id, citizen]
+         : citizens) {
+
+        if (predicate(citizen)) {
+            result.push_back(citizen);
+        }
+    }
+
+    return result;
+}
+
+vector<shared_ptr<Building>>
+CityManager::queryBuildings(
+    function<bool(
+        const shared_ptr<Building>&
+    )> predicate
+) const {
+
+    vector<shared_ptr<Building>> result;
+
+    for (const auto& [id, building]
+         : buildings) {
+
+        if (predicate(building)) {
+            result.push_back(building);
+        }
+    }
+
+    return result;
+}
+
 size_t CityManager::getTotalCitizens() const {
     return citizens.size();
 }

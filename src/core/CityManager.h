@@ -3,6 +3,7 @@
 #include <unordered_map>
 #include <memory>
 #include <string>
+#include <functional>
 
 #include "../models/Citizen.h"
 #include "../models/Building.h"
@@ -122,6 +123,20 @@ public:
     vector<shared_ptr<Citizen>> listCitizensInBuilding(int buildingId) const;
 
     vector<shared_ptr<Building>> findBuildingsWithCapacity() const;
+
+    vector<shared_ptr<Citizen>>
+    queryCitizens(
+        function<bool(
+            const shared_ptr<Citizen>&
+        )> predicate
+    ) const;
+
+    vector<shared_ptr<Building>>
+    queryBuildings(
+        function<bool(
+            const shared_ptr<Building>&
+        )> predicate
+    ) const;
 
     //--------------------------------------------------
     // Statistics
