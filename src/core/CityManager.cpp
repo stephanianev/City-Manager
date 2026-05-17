@@ -857,3 +857,100 @@ double CityManager::getOccupancyRate(int buildingId) const {
 }
 
 const EventManager& CityManager::getEventManager() const {return eventManager;}
+
+vector<shared_ptr<Citizen>>
+CityManager::sortCitizens(
+    vector<shared_ptr<Citizen>> citizensToSort,
+    function<bool(
+        const shared_ptr<Citizen>&,
+        const shared_ptr<Citizen>&
+    )> comparator
+) const {
+
+    sort(
+        citizensToSort.begin(),
+        citizensToSort.end(),
+        comparator
+    );
+
+    return citizensToSort;
+}
+
+vector<shared_ptr<Building>>
+CityManager::sortBuildings(
+    vector<shared_ptr<Building>> buildingsToSort,
+    function<bool(
+        const shared_ptr<Building>&,
+        const shared_ptr<Building>&
+    )> comparator
+) const {
+
+    sort(
+        buildingsToSort.begin(),
+        buildingsToSort.end(),
+        comparator
+    );
+
+    return buildingsToSort;
+}
+
+unordered_map<string, int>
+CityManager::getProfessionDistribution() const {
+
+    unordered_map<string, int> result;
+
+    for (const auto& [id, citizen]
+         : citizens) {
+
+        result[
+            citizen->getProfession()
+        ]++;
+    }
+
+    return result;
+}
+
+unordered_map<string, int>
+CityManager::getBuildingTypeDistribution() const {
+
+    unordered_map<string, int> result;
+
+    for (const auto& [id, building]
+         : buildings) {
+
+        result[
+            building->getType()
+        ]++;
+    }
+
+    return result;
+}
+
+vector<pair<string, double>>
+CityManager::getBuildingOccupancyReport() const {
+
+    vector<pair<string, double>> result;
+
+    for (const auto& [id, building]
+         : buildings) {
+
+        double rate = 0.0;
+
+        if (building->getCapacity() > 0) {
+
+            rate =
+                static_cast<double>(
+                    building->getOccupantCount()
+                )
+                /
+                building->getCapacity();
+        }
+
+        result.push_back({
+            building->getName(),
+            rate
+        });
+    }
+
+    return result;
+}

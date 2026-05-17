@@ -157,4 +157,39 @@ public:
     //--------------------------------------------------
 
     const EventManager& getEventManager() const;
+
+    //--------------------------------------------------
+    // Sorting Operations
+    //--------------------------------------------------
+
+    vector<shared_ptr<Citizen>>
+    sortCitizens(
+        vector<shared_ptr<Citizen>> citizensToSort,
+        function<bool(
+            const shared_ptr<Citizen>&,
+            const shared_ptr<Citizen>&
+        )> comparator
+    ) const;
+
+    vector<shared_ptr<Building>>
+    sortBuildings(
+        vector<shared_ptr<Building>> buildingsToSort,
+        function<bool(
+            const shared_ptr<Building>&,
+            const shared_ptr<Building>&
+        )> comparator
+    ) const;
+
+    //--------------------------------------------------
+    // Reporting Operations
+    //--------------------------------------------------
+
+    unordered_map<string, int>
+    getProfessionDistribution() const;
+
+    unordered_map<string, int>
+    getBuildingTypeDistribution() const;
+
+    vector<pair<string, double>>
+    getBuildingOccupancyReport() const;
 };

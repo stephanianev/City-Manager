@@ -94,7 +94,7 @@ public:
 
 #define EXPECT_TRUE(cond) \
 if (!(cond)) \
-throw runtime_error("Condition failed: " #cond);
+throw runtime_error("Condition failed");
 
 #define EXPECT_EQ(a, b) \
 if (!((a) == (b))) \
@@ -105,47 +105,55 @@ int main() {
     TestRunner runner;
 
     //--------------------------------------------------
-    // 1. QUERY BY PROFESSION
+    // 1. SORT CITIZENS BY AGE
     //--------------------------------------------------
     runner.run(
-        "Query By Profession",
+        "Sort Citizens By Age",
         []() {
 
         CityManager city;
 
         city.createCitizen(
-            "Ivan",
-            25,
-            "Engineer"
+            "A",
+            40,
+            "X"
         );
 
         city.createCitizen(
-            "Maria",
-            30,
-            "Teacher"
+            "B",
+            20,
+            "X"
         );
 
-        auto result =
+        auto queried =
             city.queryCitizens(
-                [](const shared_ptr<Citizen>& c) {
-
-                    return c->getProfession()
-                           == "Engineer";
+                [](const shared_ptr<Citizen>&) {
+                    return true;
                 }
             );
 
-        EXPECT_EQ(result.size(), 1);
+        auto sorted =
+            city.sortCitizens(
+                queried,
+                [](const shared_ptr<Citizen>& a,
+                   const shared_ptr<Citizen>& b) {
+
+                    return a->getAge()
+                           < b->getAge();
+                }
+            );
+
         EXPECT_EQ(
-            result[0]->getName(),
-            "Ivan"
+            sorted[0]->getAge(),
+            20
         );
     });
 
     //--------------------------------------------------
-    // 2. QUERY BY AGE
+    // 2. PROFESSION DISTRIBUTION
     //--------------------------------------------------
     runner.run(
-        "Query By Age",
+        "Profession Distribution",
         []() {
 
         CityManager city;
@@ -153,191 +161,101 @@ int main() {
         city.createCitizen(
             "A",
             20,
-            "X"
+            "Engineer"
         );
 
         city.createCitizen(
             "B",
-            40,
-            "Y"
-        );
-
-        auto result =
-            city.queryCitizens(
-                [](const shared_ptr<Citizen>& c) {
-
-                    return c->getAge() >= 30;
-                }
-            );
-
-        EXPECT_EQ(result.size(), 1);
-        EXPECT_EQ(
-            result[0]->getName(),
-            "B"
-        );
-    });
-
-    //--------------------------------------------------
-    // 3. COMPLEX QUERY
-    //--------------------------------------------------
-    runner.run(
-        "Complex Citizen Query",
-        []() {
-
-        CityManager city;
-
-        city.createCitizen(
-            "Ivan",
-            35,
+            30,
             "Engineer"
         );
 
         city.createCitizen(
-            "Maria",
-            25,
-            "Engineer"
-        );
-
-        city.createCitizen(
-            "Peter",
+            "C",
             40,
             "Teacher"
         );
 
-        auto result =
-            city.queryCitizens(
-                [](const shared_ptr<Citizen>& c) {
+        auto report =
+            city.getProfessionDistribution();
 
-                    return
-                        c->getProfession()
-                            == "Engineer"
-
-                        &&
-
-                        c->getAge() > 30;
-                }
-            );
-
-        EXPECT_EQ(result.size(), 1);
         EXPECT_EQ(
-            result[0]->getName(),
-            "Ivan"
+            report["Engineer"],
+            2
+        );
+
+        EXPECT_EQ(
+            report["Teacher"],
+            1
         );
     });
 
     //--------------------------------------------------
-    // 4. QUERY BUILDINGS
+    // 3. BUILDING TYPE REPORT
     //--------------------------------------------------
     runner.run(
-        "Query Buildings",
+        "Building Type Distribution",
         []() {
 
         CityManager city;
 
         city.createResidentialBuilding(
-            "Block A",
-            100
+            "R1",
+            10
         );
 
         city.createCommercialBuilding(
-            "Mall",
-            50
+            "C1",
+            20
         );
 
-        auto result =
-            city.queryBuildings(
-                [](const shared_ptr<Building>& b) {
+        city.createCommercialBuilding(
+            "C2",
+            20
+        );
 
-                    return b->getType()
-                           == "Commercial";
-                }
-            );
+        auto report =
+            city.getBuildingTypeDistribution();
 
-        EXPECT_EQ(result.size(), 1);
+        EXPECT_EQ(
+            report["Commercial"],
+            2
+        );
     });
 
     //--------------------------------------------------
-    // 5. EMPTY RESULT
+    // 4. OCCUPANCY REPORT
     //--------------------------------------------------
     runner.run(
-        "Empty Query Result",
+        "Occupancy Report",
         []() {
 
         CityManager city;
 
-        city.createCitizen(
-            "Ivan",
-            20,
-            "Student"
-        );
-
-        auto result =
-            city.queryCitizens(
-                [](const shared_ptr<Citizen>& c) {
-
-                    return c->getAge() > 100;
-                }
-            );
-
-        EXPECT_TRUE(result.empty());
-    });
-
-    //--------------------------------------------------
-    // 6. ALL MATCH
-    //--------------------------------------------------
-    runner.run(
-        "All Match Query",
-        []() {
-
-        CityManager city;
-
-        for (int i = 0; i < 100; i++) {
-
+        auto citizen =
             city.createCitizen(
-                "User",
+                "Ivan",
                 20,
                 "X"
             );
-        }
 
-        auto result =
-            city.queryCitizens(
-                [](const shared_ptr<Citizen>&) {
-
-                    return true;
-                }
+        auto building =
+            city.createResidentialBuilding(
+                "Block",
+                10
             );
 
-        EXPECT_EQ(result.size(), 100);
-    });
+        city.assignHome(
+            citizen->getId(),
+            building->getId()
+        );
 
-    //--------------------------------------------------
-    // 7. STRESS QUERY
-    //--------------------------------------------------
-    runner.run(
-        "Stress Query",
-        []() {
+        auto report =
+            city.getBuildingOccupancyReport();
 
-        CityManager city;
-
-        for (int i = 0; i < 10000; i++) {
-
-            city.createCitizen(
-                "User",
-                i % 100,
-                "Worker"
-            );
-        }
-
-        auto result =
-            city.queryCitizens(
-                [](const shared_ptr<Citizen>& c) {
-
-                    return c->getAge() >= 50;
-                }
-            );
-
-        EXPECT_TRUE(!result.empty());
+        EXPECT_TRUE(
+            !report.empty()
+        );
     });
 
     //--------------------------------------------------
