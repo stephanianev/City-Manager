@@ -10,6 +10,7 @@
 #include "../models/CommercialBuilding.h"
 #include "../models/IndustrialBuilding.h"
 #include "../models/ServiceBuilding.h"
+#include "../events/EventManager.h"
 
 using namespace std;
 
@@ -28,6 +29,8 @@ private:
 
     shared_ptr<Building>
     getBuildingOrThrow(int id) const;
+
+    EventManager eventManager;
 
 public:
     //--------------------------------------------------
@@ -133,4 +136,10 @@ public:
     size_t getUnemployedCount() const;
 
     double getOccupancyRate(int buildingId) const;
+
+    //--------------------------------------------------
+    // Events
+    //--------------------------------------------------
+
+    const EventManager& getEventManager() const;
 };

@@ -1,4 +1,5 @@
 #include "CityManager.h"
+#include "../events/ModelEvents.h"
 
 #include <algorithm>
 #include <cctype>
@@ -81,6 +82,13 @@ shared_ptr<Citizen> CityManager::createCitizen(
 
     citizens[id] = citizen;
 
+    eventManager.addEvent(
+        make_shared<CitizenCreatedEvent>(
+            citizen->getId(),
+            citizen->getName()
+        )
+    );
+
     return citizen;
 }
 
@@ -111,6 +119,14 @@ CityManager::createResidentialBuilding(
         );
 
     buildings[id] = building;
+
+    eventManager.addEvent(
+        make_shared<BuildingCreatedEvent>(
+            building->getId(),
+            building->getName(),
+            building->getType()
+        )
+    );
 
     return building;
 }
@@ -144,6 +160,14 @@ CityManager::createCommercialBuilding(
 
     buildings[id] = building;
 
+    eventManager.addEvent(
+        make_shared<BuildingCreatedEvent>(
+            building->getId(),
+            building->getName(),
+            building->getType()
+        )
+    );
+
     return building;
 }
 
@@ -176,6 +200,14 @@ CityManager::createIndustrialBuilding(
 
     buildings[id] = building;
 
+    eventManager.addEvent(
+        make_shared<BuildingCreatedEvent>(
+            building->getId(),
+            building->getName(),
+            building->getType()
+        )
+    );
+
     return building;
 }
 
@@ -207,6 +239,14 @@ CityManager::createServiceBuilding(
         );
 
     buildings[id] = building;
+
+    eventManager.addEvent(
+        make_shared<BuildingCreatedEvent>(
+            building->getId(),
+            building->getName(),
+            building->getType()
+        )
+    );
 
     return building;
 }
@@ -462,6 +502,13 @@ void CityManager::assignWorkplace(
     //--------------------------------------
 
     citizen->setWorkplace(building);
+
+    eventManager.addEvent(
+        make_shared<WorkplaceAssignedEvent>(
+            citizenId,
+            buildingId
+        )
+    );
 }
 
 void CityManager::moveCitizen(
@@ -516,6 +563,13 @@ void CityManager::moveCitizen(
     building->addOccupant(citizen);
 
     citizen->setLocation(building);
+
+    eventManager.addEvent(
+        make_shared<CitizenMovedEvent>(
+            citizenId,
+            buildingId
+        )
+    );
 }
 
 void CityManager::assignHome(
@@ -566,6 +620,13 @@ void CityManager::assignHome(
     //--------------------------------------
 
     citizen->setHome(building);
+
+    eventManager.addEvent(
+        make_shared<HomeAssignedEvent>(
+            citizenId,
+            buildingId
+        )
+    );
 }
 
 void CityManager::removeCitizen(
@@ -593,6 +654,10 @@ void CityManager::removeCitizen(
     //--------------------------------------
     // Remove citizen from storage
     //--------------------------------------
+
+    eventManager.addEvent(
+        make_shared<CitizenRemovedEvent>(citizenId)
+    );
 
     citizens.erase(citizenId);
 }
@@ -653,6 +718,10 @@ void CityManager::removeBuilding(
     //--------------------------------------
     // Remove building
     //--------------------------------------
+
+    eventManager.addEvent(
+        make_shared<BuildingRemovedEvent>(buildingId)
+    );
 
     buildings.erase(buildingId);
 }
@@ -746,3 +815,5 @@ double CityManager::getOccupancyRate(int buildingId) const {
     return static_cast<double>(building->getOccupantCount()) /
            building->capacity;
 }
+
+const EventManager& CityManager::getEventManager() const {return eventManager;}
