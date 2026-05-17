@@ -251,6 +251,11 @@ int main() {
         EXPECT_TRUE(
             stats["Residential"] > 0.0
         );
+
+        EXPECT_EQ(
+            building->getOccupantCount(),
+            1
+        );
     });
 
     //--------------------------------------------------
