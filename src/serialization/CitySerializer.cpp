@@ -159,8 +159,11 @@ void CitySerializer::loadFromFile(
         if (currentSection ==
             Section::Buildings) {
 
-            auto parts =
-                split(line, '|');
+            auto parts = split(line, '|');
+
+            if (parts.size() != 4) {
+                throw runtime_error("Malformed building record in save file");
+            }
 
             int id =
                 stoi(parts[0]);
@@ -215,8 +218,11 @@ void CitySerializer::loadFromFile(
         else if (currentSection ==
                  Section::Citizens) {
 
-            auto parts =
-                split(line, '|');
+            auto parts = split(line, '|');
+
+            if (parts.size() != 7) {
+                throw runtime_error("Malformed citizen record in save file");
+            }
 
             int id =
                 stoi(parts[0]);
