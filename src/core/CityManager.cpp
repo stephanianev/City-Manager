@@ -516,7 +516,7 @@ void CityManager::moveCitizen(
     // Add new location
     //--------------------------------------
 
-    building->addOccupant(citizen);
+    building->addOccupant(citizen); // changes physical location of citizen
 
     citizen->setLocation(building);
 
@@ -581,8 +581,6 @@ void CityManager::assignHome(
             citizen->getId()
         );
     }
-
-    building->addOccupant(citizen);
 
     citizen->setHome(building);
 
