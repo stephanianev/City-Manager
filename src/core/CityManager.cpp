@@ -575,6 +575,15 @@ void CityManager::assignHome(
     // Synchronize state
     //--------------------------------------
 
+    if (auto oldHome = citizen->getHome()) {
+
+        oldHome->removeOccupant(
+            citizen->getId()
+        );
+    }
+
+    building->addOccupant(citizen);
+
     citizen->setHome(building);
 
     eventManager.addEvent(
