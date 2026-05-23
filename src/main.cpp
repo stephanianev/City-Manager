@@ -75,10 +75,18 @@ public:
     if ((cond)) throw runtime_error("Condition failed (expected false): " #cond);
 
 #define EXPECT_EQ(a, b) \
-    if (!((a) == (b))) throw runtime_error("Expected equality failed");
+    if (!((a) == (b))) { \
+        ostringstream _oss; \
+        _oss << "Expected " << (a) << " == " << (b); \
+        throw runtime_error(_oss.str()); \
+    }
 
 #define EXPECT_NEAR(a, b, eps) \
-    if (fabs((a) - (b)) > (eps)) throw runtime_error("Expected near-equality failed");
+    if (fabs((a) - (b)) > (eps)) { \
+        ostringstream _oss; \
+        _oss << "Expected near-equality failed: " << (a) << " vs " << (b) << " (epsilon=" << (eps) << ")"; \
+        throw runtime_error(_oss.str()); \
+    }
 
 #define EXPECT_THROW(stmt) \
     { bool thrown = false; \
@@ -169,7 +177,11 @@ void printDistribution(const unordered_map<K, V>& data, const string& label) {
         [](const auto& a, const auto& b) { return a.first < b.first; });
 
     for (const auto& [k, v] : items) {
-        cout << "  " << k << ": " << v << "\n";
+        if (k == "") {
+            cout << "  Jobless: " << v << "\n";
+        } else {
+            cout << "  " << k << ": " << v << "\n";
+        }
     }
 }
 

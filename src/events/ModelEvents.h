@@ -4,8 +4,6 @@
 
 #include <string>
 
-using namespace std;
-
 ///////////////////////////////////////////////////////////
 // CitizenCreatedEvent
 ///////////////////////////////////////////////////////////
@@ -13,17 +11,17 @@ using namespace std;
 class CitizenCreatedEvent : public Event {
 private:
     int citizenId;
-    string citizenName;
+    std::string citizenName;
 
 public:
     CitizenCreatedEvent(
         int id,
-        const string& name
+        const std::string& name
     );
 
-    string getType() const override;
+    std::string getType() const override;
 
-    string getDescription() const override;
+    std::string getDescription() const override;
 };
 
 ///////////////////////////////////////////////////////////
@@ -37,9 +35,9 @@ private:
 public:
     CitizenRemovedEvent(int id);
 
-    string getType() const override;
+    std::string getType() const override;
 
-    string getDescription() const override;
+    std::string getDescription() const override;
 };
 
 ///////////////////////////////////////////////////////////
@@ -49,19 +47,19 @@ public:
 class BuildingCreatedEvent : public Event {
 private:
     int buildingId;
-    string buildingName;
-    string buildingType;
+    std::string buildingName;
+    std::string buildingType;
 
 public:
     BuildingCreatedEvent(
         int id,
-        const string& name,
-        const string& type
+        const std::string& name,
+        const std::string& type
     );
 
-    string getType() const override;
+    std::string getType() const override;
 
-    string getDescription() const override;
+    std::string getDescription() const override;
 };
 
 ///////////////////////////////////////////////////////////
@@ -75,9 +73,9 @@ private:
 public:
     BuildingRemovedEvent(int id);
 
-    string getType() const override;
+    std::string getType() const override;
 
-    string getDescription() const override;
+    std::string getDescription() const override;
 };
 
 ///////////////////////////////////////////////////////////
@@ -95,9 +93,9 @@ public:
         int buildingId
     );
 
-    string getType() const override;
+    std::string getType() const override;
 
-    string getDescription() const override;
+    std::string getDescription() const override;
 };
 
 ///////////////////////////////////////////////////////////
@@ -115,9 +113,9 @@ public:
         int buildingId
     );
 
-    string getType() const override;
+    std::string getType() const override;
 
-    string getDescription() const override;
+    std::string getDescription() const override;
 };
 
 ///////////////////////////////////////////////////////////
@@ -135,7 +133,39 @@ public:
         int buildingId
     );
 
-    string getType() const override;
+    std::string getType() const override;
 
-    string getDescription() const override;
+    std::string getDescription() const override;
+};
+
+///////////////////////////////////////////////////////////
+// CitizenUpdatedEvent
+///////////////////////////////////////////////////////////
+
+class CitizenUpdatedEvent : public Event {
+private:
+    int citizenId;
+    std::string citizenName;
+
+public:
+    CitizenUpdatedEvent(int id, const std::string& name);
+
+    std::string getType() const override;
+    std::string getDescription() const override;
+};
+
+///////////////////////////////////////////////////////////
+// BuildingUpdatedEvent
+///////////////////////////////////////////////////////////
+
+class BuildingUpdatedEvent : public Event {
+private:
+    int buildingId;
+    std::string buildingName;
+
+public:
+    BuildingUpdatedEvent(int id, const std::string& name);
+
+    std::string getType() const override;
+    std::string getDescription() const override;
 };

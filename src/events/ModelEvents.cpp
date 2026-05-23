@@ -1,5 +1,7 @@
 #include "ModelEvents.h"
 
+using namespace std;
+
 ///////////////////////////////////////////////////////////
 // CitizenCreatedEvent
 ///////////////////////////////////////////////////////////
@@ -155,4 +157,48 @@ string CitizenMovedEvent::getDescription() const {
            to_string(citizenId) +
            ", Building ID=" +
            to_string(buildingId);
+}
+
+///////////////////////////////////////////////////////////
+// CitizenUpdatedEvent
+///////////////////////////////////////////////////////////
+
+CitizenUpdatedEvent::CitizenUpdatedEvent(
+    int id,
+    const string& name
+)
+    : citizenId(id),
+      citizenName(name) {}
+
+string CitizenUpdatedEvent::getType() const {
+    return "CitizenUpdated";
+}
+
+string CitizenUpdatedEvent::getDescription() const {
+    return "Citizen updated: ID=" +
+           to_string(citizenId) +
+           ", Name=" +
+           citizenName;
+}
+
+///////////////////////////////////////////////////////////
+// BuildingUpdatedEvent
+///////////////////////////////////////////////////////////
+
+BuildingUpdatedEvent::BuildingUpdatedEvent(
+    int id,
+    const string& name
+)
+    : buildingId(id),
+      buildingName(name) {}
+
+string BuildingUpdatedEvent::getType() const {
+    return "BuildingUpdated";
+}
+
+string BuildingUpdatedEvent::getDescription() const {
+    return "Building updated: ID=" +
+           to_string(buildingId) +
+           ", Name=" +
+           buildingName;
 }

@@ -1,6 +1,8 @@
 #include "CommercialBuilding.h"
 #include "Citizen.h"
 
+using namespace std;
+
 CommercialBuilding::CommercialBuilding(
     int id,
     const string& name,
@@ -15,4 +17,8 @@ bool CommercialBuilding::canAcceptCitizen(
 
 string CommercialBuilding::getType() const {
     return "Commercial";
+}
+
+BuildingType CommercialBuilding::getBuildingType() const {
+    return BuildingType::Commercial;
 }

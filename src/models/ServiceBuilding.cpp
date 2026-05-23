@@ -1,6 +1,8 @@
 #include "ServiceBuilding.h"
 #include "Citizen.h"
 
+using namespace std;
+
 ServiceBuilding::ServiceBuilding(
     int id,
     const string& name,
@@ -15,4 +17,8 @@ bool ServiceBuilding::canAcceptCitizen(
 
 string ServiceBuilding::getType() const {
     return "Service";
+}
+
+BuildingType ServiceBuilding::getBuildingType() const {
+    return BuildingType::Service;
 }

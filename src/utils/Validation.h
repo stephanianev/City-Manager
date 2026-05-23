@@ -2,13 +2,11 @@
 
 #include <string>
 
-using namespace std;
-
 class Validation {
 public:
 
     static void validateCitizenName(
-        const string& name
+        const std::string& name
     );
 
     static void validateCitizenAge(
@@ -16,7 +14,7 @@ public:
     );
 
     static void validateBuildingName(
-        const string& name
+        const std::string& name
     );
 
     static void validateBuildingCapacity(

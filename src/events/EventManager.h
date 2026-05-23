@@ -5,16 +5,15 @@
 
 #include "Event.h"
 
-using namespace std;
-
 class EventManager {
 private:
-    vector<shared_ptr<Event>> events;
+    std::vector<std::shared_ptr<Event>> events;
+    size_t maxEvents = 10000; // default cap to prevent unbounded memory growth
 
 public:
-    void addEvent(shared_ptr<Event> event);
+    void addEvent(std::shared_ptr<Event> event);
 
-    const vector<shared_ptr<Event>>&
+    const std::vector<std::shared_ptr<Event>>&
     getEvents() const;
 
     size_t getEventCount() const;

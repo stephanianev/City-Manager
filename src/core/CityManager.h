@@ -14,92 +14,108 @@
 #include "../models/ServiceBuilding.h"
 #include "../events/EventManager.h"
 
-using namespace std;
-
+// using namespace std; Avoiding this in headers to prevent namespace pollution, but we have to use it in the implementation file.
 class CityManager {
 private:
-    unordered_map<int, shared_ptr<Citizen>> citizens;
-    unordered_map<int, shared_ptr<Building>> buildings;
+    std::unordered_map<int, std::shared_ptr<Citizen>> citizens;
+    std::unordered_map<int, std::shared_ptr<Building>> buildings;
 
     int nextCitizenId = 1;
     int nextBuildingId = 1;
 
-    bool isBlank(const string& str) const;
+    bool isBlank(const std::string& str) const;
 
-    shared_ptr<Citizen>
+    std::shared_ptr<Citizen>
     getCitizenOrThrow(int id) const;
 
-    shared_ptr<Building>
+    std::shared_ptr<Building>
     getBuildingOrThrow(int id) const;
 
     EventManager eventManager;
+
+    template<typename T>
+    std::shared_ptr<T> createBuildingImpl(
+        const std::string& name,
+        size_t capacity
+    );
+
+    template<typename T>
+    std::shared_ptr<Building> restoreBuildingImpl(
+        int id,
+        const std::string& name,
+        size_t capacity
+    );
 
 public:
     //--------------------------------------------------
     // Runtime Creation Operations
     //--------------------------------------------------
-    shared_ptr<Citizen> createCitizen(
-        const string& name,
+    std::shared_ptr<Citizen> createCitizen(
+        const std::string& name,
         int age,
-        const string& profession
+        const std::string& profession
     );
 
-    shared_ptr<ResidentialBuilding> createResidentialBuilding(
-        const string& name,
+    std::shared_ptr<ResidentialBuilding> createResidentialBuilding(
+        const std::string& name,
         size_t capacity
     );
 
-    shared_ptr<CommercialBuilding> createCommercialBuilding(
-        const string& name,
+    std::shared_ptr<CommercialBuilding> createCommercialBuilding(
+        const std::string& name,
         size_t capacity
     );
 
-    shared_ptr<IndustrialBuilding> createIndustrialBuilding(
-        const string& name,
+    std::shared_ptr<IndustrialBuilding> createIndustrialBuilding(
+        const std::string& name,
         size_t capacity
     );
 
-    shared_ptr<ServiceBuilding> createServiceBuilding(
-        const string& name,
+    std::shared_ptr<ServiceBuilding> createServiceBuilding(
+        const std::string& name,
         size_t capacity
     );
+
+    void updateCitizenAge(int citizenId, int age);
+    void updateCitizenProfession(int citizenId, const std::string& profession);
+    void renameBuilding(int buildingId, const std::string& name);
 
     //--------------------------------------------------
     // Restoration Operations
     //--------------------------------------------------
-    shared_ptr<Citizen> restoreCitizen(
+    std::shared_ptr<Citizen> restoreCitizen(
     int id,
-    const string& name,
+    const std::string& name,
     int age,
-    const string& profession
+    const std::string& profession
     );
 
-    shared_ptr<Building> restoreResidentialBuilding(
+    std::shared_ptr<Building> restoreResidentialBuilding(
         int id,
-        const string& name,
+        const std::string& name,
         size_t capacity
     );
 
-    shared_ptr<Building> restoreCommercialBuilding(
+    std::shared_ptr<Building> restoreCommercialBuilding(
         int id,
-        const string& name,
+        const std::string& name,
         size_t capacity
     );
 
-    shared_ptr<Building> restoreIndustrialBuilding(
+    std::shared_ptr<Building> restoreIndustrialBuilding(
         int id,
-        const string& name,
+        const std::string& name,
         size_t capacity
     );
 
-    shared_ptr<Building> restoreServiceBuilding(
+    std::shared_ptr<Building> restoreServiceBuilding(
         int id,
-        const string& name,
+        const std::string& name,
         size_t capacity
     );
 
-    const unordered_map<int, shared_ptr<Citizen>>&getCitizens() const;
-    const unordered_map<int, shared_ptr<Building>>&getBuildings() const;
+    const std::unordered_map<int, std::shared_ptr<Citizen>>&getCitizens() const;
+    const std::unordered_map<int, std::shared_ptr<Building>>&getBuildings() const;
 
     void assignWorkplace(int citizenId, int buildingId);
     void moveCitizen(int citizenId, int buildingId);
@@ -119,27 +135,27 @@ public:
     // Query Operations
     //--------------------------------------------------
 
-    vector<shared_ptr<Citizen>> findCitizensByProfession(const string& profession) const;
+    std::vector<std::shared_ptr<Citizen>> findCitizensByProfession(const std::string& profession) const;
 
-    vector<shared_ptr<Citizen>> listCitizensInBuilding(int buildingId) const;
+    std::vector<std::shared_ptr<Citizen>> listCitizensInBuilding(int buildingId) const;
 
-    vector<shared_ptr<Building>> findBuildingsWithCapacity() const;
+    std::vector<std::shared_ptr<Building>> findBuildingsWithCapacity() const;
 
-    vector<shared_ptr<Citizen>> findCitizensByName(const string& name) const;
+    std::vector<std::shared_ptr<Citizen>> findCitizensByName(const std::string& name) const;
     
-    vector<shared_ptr<Building>> findBuildingsByName(const string& name) const;
+    std::vector<std::shared_ptr<Building>> findBuildingsByName(const std::string& name) const;
 
-    vector<shared_ptr<Citizen>>
+    std::vector<std::shared_ptr<Citizen>>
     queryCitizens(
-        function<bool(
-            const shared_ptr<Citizen>&
+        std::function<bool(
+            const std::shared_ptr<Citizen>&
         )> predicate
     ) const;
 
-    vector<shared_ptr<Building>>
+    std::vector<std::shared_ptr<Building>>
     queryBuildings(
-        function<bool(
-            const shared_ptr<Building>&
+        std::function<bool(
+            const std::shared_ptr<Building>&
         )> predicate
     ) const;
 
@@ -161,7 +177,7 @@ public:
 
     double getEmploymentRate() const;
 
-    unordered_map<string, double>
+    std::unordered_map<std::string, double>
     getAverageOccupancyByType() const;
 
     //--------------------------------------------------
@@ -174,21 +190,21 @@ public:
     // Sorting Operations
     //--------------------------------------------------
 
-    vector<shared_ptr<Citizen>>
+    std::vector<std::shared_ptr<Citizen>>
     sortCitizens(
-        vector<shared_ptr<Citizen>> citizensToSort,
-        function<bool(
-            const shared_ptr<Citizen>&,
-            const shared_ptr<Citizen>&
+        std::vector<std::shared_ptr<Citizen>> citizensToSort,
+        std::function<bool(
+            const std::shared_ptr<Citizen>&,
+            const std::shared_ptr<Citizen>&
         )> comparator
     ) const;
 
-    vector<shared_ptr<Building>>
+    std::vector<std::shared_ptr<Building>>
     sortBuildings(
-        vector<shared_ptr<Building>> buildingsToSort,
-        function<bool(
-            const shared_ptr<Building>&,
-            const shared_ptr<Building>&
+        std::vector<std::shared_ptr<Building>> buildingsToSort,
+        std::function<bool(
+            const std::shared_ptr<Building>&,
+            const std::shared_ptr<Building>&
         )> comparator
     ) const;
 
@@ -196,12 +212,12 @@ public:
     // Reporting Operations
     //--------------------------------------------------
 
-    unordered_map<string, int>
+    std::unordered_map<std::string, int>
     getProfessionDistribution() const;
 
-    unordered_map<string, int>
+    std::unordered_map<std::string, int>
     getBuildingTypeDistribution() const;
 
-    vector<pair<string, double>>
+    std::vector<std::pair<std::string, double>>
     getBuildingOccupancyReport() const;
 };

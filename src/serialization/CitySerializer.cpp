@@ -12,15 +12,22 @@ vector<string> split(
     const string& line,
     char delimiter
 ) {
-
     vector<string> tokens;
-
     string token;
-
     stringstream ss(line);
 
     while (getline(ss, token, delimiter)) {
         tokens.push_back(token);
+    }
+
+    /* 
+    If the line ends with the delimiter, getline won't produce
+    a final empty token — but we need it for empty profession (Jobless).
+    So we add it manually when the line ends with the delimiter.
+    */
+
+    if (!line.empty() && line.back() == delimiter) {
+        tokens.push_back("");
     }
 
     return tokens;
@@ -132,9 +139,7 @@ void CitySerializer::loadFromFile(
 
     while (getline(in, line)) {
 
-        if (line.empty()) {
-            continue;
-        }
+        if (!line.empty() && line.back() == '\r') line.pop_back(); // Handle Windows line endings '\r\n' -> '\n' by removing trailing '\r' if present
 
         //----------------------------------
         // Section headers
@@ -209,6 +214,7 @@ void CitySerializer::loadFromFile(
                     capacity
                 );
             }
+            else throw runtime_error("Unknown building type: " + type);
         }
 
         //----------------------------------

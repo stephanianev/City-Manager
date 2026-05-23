@@ -6,7 +6,7 @@ class IndustrialBuilding : public Building {
 public:
     IndustrialBuilding(
         int id,
-        const string& name,
+        const std::string& name,
         size_t capacity
     );
 
@@ -14,5 +14,6 @@ public:
         const Citizen& citizen
     ) const override;
 
-    string getType() const override;
+    std::string getType() const override;
+    BuildingType getBuildingType() const override;
 };

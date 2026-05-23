@@ -3,8 +3,7 @@
 #include <string>
 #include <vector>
 #include <memory>
-
-using namespace std;
+#include "BuildingType.h"
 
 class Citizen;
 class CityManager;
@@ -12,35 +11,37 @@ class CityManager;
 class Building {
     friend class CityManager;
 
+    // Occupant management is exclusively handled by CityManager to ensure consistency and event generation
+    void addOccupant(std::shared_ptr<Citizen> c);
+    void removeOccupant(int citizenId);
+
 protected:
     int id;
-    string name;
+    std::string name;
     size_t capacity;
 
-    vector<weak_ptr<Citizen>> occupants;
-
-protected:
-    void addOccupant(shared_ptr<Citizen> c);
-    void removeOccupant(int citizenId);
+    std::vector<std::weak_ptr<Citizen>> occupants;
 
 public:
     Building(int id,
-             const string& name,
-             size_t capacity
-    );
-    
+             const std::string& name,
+             size_t capacity);
+
     virtual ~Building() = default;
 
     int getId() const;
-    string getName() const;
+    std::string getName() const;
     size_t getCapacity() const;
 
     bool hasCapacity() const;
     size_t getOccupantCount() const;
 
-    vector<shared_ptr<Citizen>> getOccupants() const;
+    std::vector<std::shared_ptr<Citizen>> getOccupants() const;
+
+    void setName(const std::string& name);
 
     virtual bool canAcceptCitizen(const Citizen& citizen) const = 0;
 
-    virtual string getType() const = 0;
+    virtual std::string getType() const = 0;           // keep for serialization display
+    virtual BuildingType getBuildingType() const = 0;  // for internal logic and type checking 
 };

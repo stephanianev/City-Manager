@@ -4,6 +4,8 @@
 #include <algorithm>
 #include <stdexcept>
 
+using namespace std;
+
 Building::Building(
     int id,
     const string& name,
@@ -33,11 +35,15 @@ string Building::getName() const { return name; }
 size_t Building::getCapacity() const { return capacity; }
 
 bool Building::hasCapacity() const {
-    return occupants.size() < capacity;
+    return getOccupantCount() < capacity;
 }
 
-size_t Building::getOccupantCount() const {
-    return occupants.size();
+size_t Building::getOccupantCount() const { // occupants.size() still counts expired weak_ptrs, so we need to count only the valid ones
+    size_t count = 0;
+    for (const auto& w : occupants) {
+        if (!w.expired()) count++;
+    }
+    return count;
 }
 
 vector<shared_ptr<Citizen>> Building::getOccupants() const {
@@ -50,6 +56,13 @@ vector<shared_ptr<Citizen>> Building::getOccupants() const {
     }
 
     return result;
+}
+
+void Building::setName(const string& name) {
+    if (name.empty()) {
+        throw invalid_argument("Building name cannot be empty");
+    }
+    this->name = name;
 }
 
 void Building::addOccupant(shared_ptr<Citizen> c) {

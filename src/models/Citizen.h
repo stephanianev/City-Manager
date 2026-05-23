@@ -3,37 +3,40 @@
 #include <string>
 #include <memory>
 
-using namespace std;
-
 class Building;
 
 class Citizen {
+    friend class CityManager;
+
 private:
     int id;
-    string name;
+    std::string name;
     int age;
-    string profession;
+    std::string profession;
 
-    weak_ptr<Building> home;
-    weak_ptr<Building> workplace;
-    weak_ptr<Building> currentLocation;
+    std::weak_ptr<Building> home;
+    std::weak_ptr<Building> workplace;
+    std::weak_ptr<Building> currentLocation;
+
+    void setHome(std::shared_ptr<Building>); 
+    void setWorkplace(std::shared_ptr<Building>);
+    void setLocation(std::shared_ptr<Building>);
 
 public:
     Citizen(int id,
-            const string& name,
+            const std::string& name,
             int age,
-            const string& profession);
+            const std::string& profession);
 
     int getId() const;
-    string getName() const;
+    std::string getName() const;
     int getAge() const;
-    string getProfession() const;
+    std::string getProfession() const;
 
-    shared_ptr<Building> getHome() const;
-    shared_ptr<Building> getWorkplace() const;
-    shared_ptr<Building> getLocation() const;
+    std::shared_ptr<Building> getHome() const;
+    std::shared_ptr<Building> getWorkplace() const;
+    std::shared_ptr<Building> getLocation() const;
 
-    void setHome(shared_ptr<Building>);
-    void setWorkplace(shared_ptr<Building>);
-    void setLocation(shared_ptr<Building>);
+    void setAge(int age);
+    void setProfession(const std::string& profession);
 };

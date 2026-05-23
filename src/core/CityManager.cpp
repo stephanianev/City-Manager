@@ -6,6 +6,8 @@
 #include <cctype>
 #include <stdexcept>
 
+using namespace std;
+
 const unordered_map<int, shared_ptr<Citizen>>&
 CityManager::getCitizens() const {
     return citizens;
@@ -55,6 +57,50 @@ CityManager::getBuildingOrThrow(
     return it->second;
 }
 
+template<typename T>
+std::shared_ptr<T> CityManager::createBuildingImpl(
+    const std::string& name,
+    size_t capacity
+) {
+    Validation::validateBuildingName(name);
+    Validation::validateBuildingCapacity(capacity);
+
+    int id = nextBuildingId++;
+
+    auto building = make_shared<T>(id, name, capacity);
+
+    buildings[id] = building;
+
+    eventManager.addEvent(
+        make_shared<BuildingCreatedEvent>(
+            building->getId(),
+            building->getName(),
+            building->getType()
+        )
+    );
+
+    return building;
+}
+
+template<typename T>
+std::shared_ptr<Building> CityManager::restoreBuildingImpl(
+    int id,
+    const std::string& name,
+    size_t capacity
+) {
+    if (buildings.count(id)) {
+        throw invalid_argument("Building ID already exists");
+    }
+
+    auto building = make_shared<T>(id, name, capacity);
+
+    buildings[id] = building;
+
+    nextBuildingId = max(nextBuildingId, id + 1);
+
+    return building;
+}
+
 shared_ptr<Citizen> CityManager::createCitizen(
     const string& name,
     int age,
@@ -84,127 +130,62 @@ shared_ptr<Citizen> CityManager::createCitizen(
     return citizen;
 }
 
-shared_ptr<ResidentialBuilding>
-CityManager::createResidentialBuilding(
-    const string& name,
-    size_t capacity
+shared_ptr<ResidentialBuilding> CityManager::createResidentialBuilding(
+    const string& name, size_t capacity
 ) {
-    Validation::validateBuildingName(name);
-    Validation::validateBuildingCapacity(capacity);
-
-    int id = nextBuildingId++;
-
-    auto building =
-        make_shared<ResidentialBuilding>(
-            id,
-            name,
-            capacity
-        );
-
-    buildings[id] = building;
-
-    eventManager.addEvent(
-        make_shared<BuildingCreatedEvent>(
-            building->getId(),
-            building->getName(),
-            building->getType()
-        )
-    );
-
-    return building;
+    return createBuildingImpl<ResidentialBuilding>(name, capacity);
 }
 
-shared_ptr<CommercialBuilding>
-CityManager::createCommercialBuilding(
-    const string& name,
-    size_t capacity
+shared_ptr<CommercialBuilding> CityManager::createCommercialBuilding(
+    const string& name, size_t capacity
 ) {
-
-    Validation::validateBuildingName(name);
-    Validation::validateBuildingCapacity(capacity);
-
-    int id = nextBuildingId++;
-
-    auto building =
-        make_shared<CommercialBuilding>(
-            id,
-            name,
-            capacity
-        );
-
-    buildings[id] = building;
-
-    eventManager.addEvent(
-        make_shared<BuildingCreatedEvent>(
-            building->getId(),
-            building->getName(),
-            building->getType()
-        )
-    );
-
-    return building;
+    return createBuildingImpl<CommercialBuilding>(name, capacity);
 }
 
-shared_ptr<IndustrialBuilding>
-CityManager::createIndustrialBuilding(
-    const string& name,
-    size_t capacity
+shared_ptr<IndustrialBuilding> CityManager::createIndustrialBuilding(
+    const string& name, size_t capacity
 ) {
-
-    Validation::validateBuildingName(name);
-    Validation::validateBuildingCapacity(capacity);
-
-    int id = nextBuildingId++;
-
-    auto building =
-        make_shared<IndustrialBuilding>(
-            id,
-            name,
-            capacity
-        );
-
-    buildings[id] = building;
-
-    eventManager.addEvent(
-        make_shared<BuildingCreatedEvent>(
-            building->getId(),
-            building->getName(),
-            building->getType()
-        )
-    );
-
-    return building;
+    return createBuildingImpl<IndustrialBuilding>(name, capacity);
 }
 
-shared_ptr<ServiceBuilding>
-CityManager::createServiceBuilding(
-    const string& name,
-    size_t capacity
+shared_ptr<ServiceBuilding> CityManager::createServiceBuilding(
+    const string& name, size_t capacity
 ) {
+    return createBuildingImpl<ServiceBuilding>(name, capacity);
+}
 
-    Validation::validateBuildingName(name);
-    Validation::validateBuildingCapacity(capacity);
-
-    int id = nextBuildingId++;
-
-    auto building =
-        make_shared<ServiceBuilding>(
-            id,
-            name,
-            capacity
-        );
-
-    buildings[id] = building;
+void CityManager::updateCitizenAge(int citizenId, int age) {
+    auto citizen = getCitizenOrThrow(citizenId);
+    citizen->setAge(age);
 
     eventManager.addEvent(
-        make_shared<BuildingCreatedEvent>(
-            building->getId(),
-            building->getName(),
-            building->getType()
-        )
+        make_shared<CitizenUpdatedEvent>(citizenId, citizen->getName())
     );
+}
 
-    return building;
+void CityManager::updateCitizenProfession(
+    int citizenId,
+    const string& profession
+) {
+    auto citizen = getCitizenOrThrow(citizenId);
+    citizen->setProfession(profession);
+
+    eventManager.addEvent(
+        make_shared<CitizenUpdatedEvent>(citizenId, citizen->getName())
+    );
+}
+
+void CityManager::renameBuilding(
+    int buildingId,
+    const string& name
+) {
+    Validation::validateBuildingName(name);
+    auto building = getBuildingOrThrow(buildingId);
+    building->setName(name);
+
+    eventManager.addEvent(
+        make_shared<BuildingUpdatedEvent>(buildingId, name)
+    );
 }
 
 shared_ptr<Citizen>
@@ -249,165 +230,28 @@ CityManager::restoreCitizen(
     return citizen;
 }
 
-shared_ptr<Building> 
-CityManager::restoreResidentialBuilding(
-        int id,
-        const string& name,
-        size_t capacity
+shared_ptr<Building> CityManager::restoreResidentialBuilding(
+    int id, const string& name, size_t capacity
 ) {
-
-    //----------------------------------
-    // Prevent duplicate IDs
-    //----------------------------------
-
-    if (buildings.count(id)) {
-        throw invalid_argument(
-            "Building ID already exists"
-        );
-    }
-
-    //----------------------------------
-    // Create building
-    //----------------------------------
-
-    auto building =
-        make_shared<ResidentialBuilding>(
-            id,
-            name,
-            capacity
-        );
-
-    buildings[id] = building;
-
-    //----------------------------------
-    // Sync ID counter
-    //----------------------------------
-
-    nextBuildingId =
-        max(nextBuildingId, id + 1);
-
-    return building;
+    return restoreBuildingImpl<ResidentialBuilding>(id, name, capacity);
 }
 
-shared_ptr<Building>
-CityManager::restoreCommercialBuilding(
-    int id,
-    const string& name,
-    size_t capacity
+shared_ptr<Building> CityManager::restoreCommercialBuilding(
+    int id, const string& name, size_t capacity
 ) {
-
-    //----------------------------------
-    // Prevent duplicate IDs
-    //----------------------------------
-
-    if (buildings.count(id)) {
-        throw invalid_argument(
-            "Building ID already exists"
-        );
-    }
-
-    //----------------------------------
-    // Create building
-    //----------------------------------
-
-    auto building =
-        make_shared<CommercialBuilding>(
-            id,
-            name,
-            capacity
-        );
-
-    buildings[id] = building;
-
-    //----------------------------------
-    // Sync ID counter
-    //----------------------------------
-
-    nextBuildingId =
-        max(nextBuildingId, id + 1);
-
-    return building;
+    return restoreBuildingImpl<CommercialBuilding>(id, name, capacity);
 }
 
-shared_ptr<Building>
-CityManager::restoreIndustrialBuilding(
-    int id,
-    const string& name,
-    size_t capacity
+shared_ptr<Building> CityManager::restoreIndustrialBuilding(
+    int id, const string& name, size_t capacity
 ) {
-
-    //----------------------------------
-    // Prevent duplicate IDs
-    //----------------------------------
-
-    if (buildings.count(id)) {
-        throw invalid_argument(
-            "Building ID already exists"
-        );
-    }
-
-    //----------------------------------
-    // Create building
-    //----------------------------------
-
-    auto building =
-        make_shared<IndustrialBuilding>(
-            id,
-            name,
-            capacity
-        );
-
-    buildings[id] = building;
-
-    //----------------------------------
-    // Sync ID counter
-    //----------------------------------
-
-    nextBuildingId =
-        max(nextBuildingId, id + 1);
-
-    return building;
+    return restoreBuildingImpl<IndustrialBuilding>(id, name, capacity);
 }
 
-
-shared_ptr<Building>
-CityManager::restoreServiceBuilding(
-    int id,
-    const string& name,
-    size_t capacity
+shared_ptr<Building> CityManager::restoreServiceBuilding(
+    int id, const string& name, size_t capacity
 ) {
-
-    //----------------------------------
-    // Prevent duplicate IDs
-    //----------------------------------
-
-    if (buildings.count(id)) {
-        throw invalid_argument(
-            "Building ID already exists"
-        );
-    }
-
-    //----------------------------------
-    // Create building
-    //----------------------------------
-
-    auto building =
-        make_shared<ServiceBuilding>(
-            id,
-            name,
-            capacity
-        );
-
-    buildings[id] = building;
-
-    //----------------------------------
-    // Sync ID counter
-    //----------------------------------
-
-    nextBuildingId =
-        max(nextBuildingId, id + 1);
-
-    return building;
+    return restoreBuildingImpl<ServiceBuilding>(id, name, capacity);
 }
 
 void CityManager::assignWorkplace(
@@ -427,7 +271,7 @@ void CityManager::assignWorkplace(
     // Residential buildings forbidden
     //--------------------------------------
 
-    if (building->getType() == "Residential") {
+    if (building->getBuildingType() == BuildingType::Residential) {
         throw invalid_argument(
             "Residential buildings cannot be workplaces"
         );
@@ -545,7 +389,7 @@ void CityManager::assignHome(
     // Building type validation
     //--------------------------------------
 
-    if (building->getType() != "Residential") {
+    if (building->getBuildingType() != BuildingType::Residential) {
         throw invalid_argument(
             "Home must be residential"
         );
@@ -780,6 +624,8 @@ CityManager::queryCitizens(
     )> predicate
 ) const {
 
+    if (!predicate) throw invalid_argument("Predicate cannot be null");
+
     vector<shared_ptr<Citizen>> result;
 
     for (const auto& [id, citizen]
@@ -799,6 +645,8 @@ CityManager::queryBuildings(
         const shared_ptr<Building>&
     )> predicate
 ) const {
+
+    if (!predicate) throw invalid_argument("Predicate cannot be null");
 
     vector<shared_ptr<Building>> result;
 
@@ -849,16 +697,16 @@ size_t CityManager::getUnemployedCount() const {
     return count;
 }
 
-double CityManager::getOccupancyRate(int buildingId) const {
+double CityManager::getOccupancyRate(int buildingId) const { // Returns value in [0.0, 1.0]
 
     auto building = getBuildingOrThrow(buildingId);
 
-    if (building->capacity == 0) {
+    if (building->getCapacity() == 0) {
         return 0.0;
     }
 
     return static_cast<double>(building->getOccupantCount()) /
-           building->capacity;
+           building->getCapacity();
 }
 
 double CityManager::getAverageCitizenAge() const {
@@ -867,7 +715,7 @@ double CityManager::getAverageCitizenAge() const {
         return 0.0;
     }
 
-    int totalAge = 0;
+    unsigned long totalAge = 0;
 
     for (const auto& [id, citizen]
          : citizens) {
@@ -886,7 +734,7 @@ double CityManager::getEmploymentRate() const {
         return 0.0;
     }
 
-    int employed = 0;
+    unsigned long employed = 0;
 
     for (const auto& [id, citizen]
          : citizens) {
@@ -1037,10 +885,10 @@ CityManager::getBuildingOccupancyReport() const {
                 building->getCapacity();
         }
 
-        result.push_back({
+        result.push_back(std::make_pair(
             building->getName(),
             rate
-        });
+        ));
     }
 
     return result;

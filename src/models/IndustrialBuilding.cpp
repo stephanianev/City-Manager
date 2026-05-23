@@ -1,6 +1,8 @@
 #include "IndustrialBuilding.h"
 #include "Citizen.h"
 
+using namespace std;
+
 IndustrialBuilding::IndustrialBuilding(
     int id,
     const string& name,
@@ -15,4 +17,8 @@ bool IndustrialBuilding::canAcceptCitizen(
 
 string IndustrialBuilding::getType() const {
     return "Industrial";
+}
+
+BuildingType IndustrialBuilding::getBuildingType() const {
+    return BuildingType::Industrial;
 }

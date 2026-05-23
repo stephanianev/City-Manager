@@ -1,6 +1,8 @@
 #include "Citizen.h"
 #include <stdexcept>
 
+using namespace std;
+
 Citizen::Citizen(int id,
                  const string& name,
                  int age,
@@ -36,3 +38,14 @@ shared_ptr<Building> Citizen::getLocation() const { return currentLocation.lock(
 void Citizen::setHome(shared_ptr<Building> b) { home = b; }
 void Citizen::setWorkplace(shared_ptr<Building> b) { workplace = b; }
 void Citizen::setLocation(shared_ptr<Building> b) { currentLocation = b; }
+
+void Citizen::setAge(int age) {
+    if (age < 0 || age > 120) {
+        throw invalid_argument("Invalid citizen age.");
+    }
+    this->age = age;
+}
+
+void Citizen::setProfession(const string& profession) {
+    this->profession = profession;
+}

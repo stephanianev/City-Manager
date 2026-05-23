@@ -1,5 +1,7 @@
 #include "Event.h"
 
+using namespace std;
+
 Event::Event()
     : timestamp(time(nullptr)) {}
 

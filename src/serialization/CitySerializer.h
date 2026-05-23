@@ -4,18 +4,16 @@
 
 #include "../core/CityManager.h"
 
-using namespace std;
-
 class CitySerializer {
 public:
 
     static void saveToFile(
         const CityManager& city,
-        const string& filename
+        const std::string& filename
     );
 
     static void loadFromFile(
         CityManager& city,
-        const string& filename
+        const std::string& filename
     );
 };
