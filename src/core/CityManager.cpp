@@ -316,7 +316,8 @@ void CityManager::assignWorkplace(
         throw invalid_argument("Residential buildings cannot be workplaces");
     }
 
-    if (citizen->getWorkplace()->getId() == buildingId) {
+    auto currentWorkspace = citizen->getWorkplace();
+    if (currentWorkspace && currentWorkspace->getId() == buildingId) {
         throw invalid_argument("Can not assign current workplace");
     }
 
@@ -415,7 +416,8 @@ void CityManager::assignHome(
         throw invalid_argument("Home must be residential");
     }
 
-    if (citizen->getHome()->getId() == buildingId) {
+    auto currentHome = citizen->getHome();
+    if (currentHome && currentHome->getId() == buildingId) {
         throw invalid_argument("Can not assign citizen to current home");
     }
 

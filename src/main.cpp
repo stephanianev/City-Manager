@@ -432,6 +432,7 @@ void runShowcaseDemo() {
 int main() {
     ios::sync_with_stdio(false);
 
+    try {
     runShowcaseDemo();
 
     TestRunner runner;
@@ -1097,6 +1098,15 @@ int main() {
     // FINAL REPORT
     //--------------------------------------------------
     runner.report();
+}
+    catch (const std::exception& ex) {
+        std::cerr << "Unhandled exception: " << ex.what() << std::endl;
+        return 1;
+    }
+    catch (...) {
+        std::cerr << "Unhandled unknown exception" << std::endl;
+        return 1;
+    }
 
     return 0;
 }
