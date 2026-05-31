@@ -4,8 +4,14 @@
 
 #include <string>
 
+// This file contains all concrete Event subclasses that correspond to
+// changes in the city's data model. Each event captures only the IDs/names
+// needed to produce a readable description — it does not hold pointers to
+// live objects (those might be destroyed by the time the log is read).
+
 ///////////////////////////////////////////////////////////
 // CitizenCreatedEvent
+// Emitted by CityManager::createCitizen.
 ///////////////////////////////////////////////////////////
 
 class CitizenCreatedEvent : public Event {
@@ -26,6 +32,7 @@ public:
 
 ///////////////////////////////////////////////////////////
 // CitizenRemovedEvent
+// Emitted by CityManager::removeCitizen.
 ///////////////////////////////////////////////////////////
 
 class CitizenRemovedEvent : public Event {
@@ -42,13 +49,14 @@ public:
 
 ///////////////////////////////////////////////////////////
 // BuildingCreatedEvent
+// Emitted by CityManager::createXxxBuilding.
 ///////////////////////////////////////////////////////////
 
 class BuildingCreatedEvent : public Event {
 private:
     int buildingId;
     std::string buildingName;
-    std::string buildingType;
+    std::string buildingType; // e.g. "Residential"
 
 public:
     BuildingCreatedEvent(
@@ -64,6 +72,7 @@ public:
 
 ///////////////////////////////////////////////////////////
 // BuildingRemovedEvent
+// Emitted by CityManager::removeBuilding.
 ///////////////////////////////////////////////////////////
 
 class BuildingRemovedEvent : public Event {
@@ -80,6 +89,7 @@ public:
 
 ///////////////////////////////////////////////////////////
 // HomeAssignedEvent
+// Emitted by CityManager::assignHome.
 ///////////////////////////////////////////////////////////
 
 class HomeAssignedEvent : public Event {
@@ -100,6 +110,7 @@ public:
 
 ///////////////////////////////////////////////////////////
 // WorkplaceAssignedEvent
+// Emitted by CityManager::assignWorkplace.
 ///////////////////////////////////////////////////////////
 
 class WorkplaceAssignedEvent : public Event {
@@ -120,12 +131,15 @@ public:
 
 ///////////////////////////////////////////////////////////
 // CitizenMovedEvent
+// Emitted by CityManager::moveCitizen.
+// Tracks physical movement of a citizen to a new building
+// (used by the future simulation layer).
 ///////////////////////////////////////////////////////////
 
 class CitizenMovedEvent : public Event {
 private:
     int citizenId;
-    int buildingId;
+    int buildingId; // the destination building
 
 public:
     CitizenMovedEvent(
@@ -140,6 +154,7 @@ public:
 
 ///////////////////////////////////////////////////////////
 // CitizenUpdatedEvent
+// Emitted by CityManager::updateCitizenAge / updateCitizenProfession.
 ///////////////////////////////////////////////////////////
 
 class CitizenUpdatedEvent : public Event {
@@ -156,12 +171,13 @@ public:
 
 ///////////////////////////////////////////////////////////
 // BuildingUpdatedEvent
+// Emitted by CityManager::renameBuilding.
 ///////////////////////////////////////////////////////////
 
 class BuildingUpdatedEvent : public Event {
 private:
     int buildingId;
-    std::string buildingName;
+    std::string buildingName; // the new name after the rename
 
 public:
     BuildingUpdatedEvent(int id, const std::string& name);

@@ -2,6 +2,8 @@
 
 #include "Building.h"
 
+// An industrial building (factories, warehouses, etc.). Can be assigned as a workplace.
+// Cannot be assigned as a home (CityManager enforces this).
 class IndustrialBuilding : public Building {
 public:
     IndustrialBuilding(

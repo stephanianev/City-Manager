@@ -9,6 +9,8 @@ IndustrialBuilding::IndustrialBuilding(
     size_t capacity
 ) : Building(id, name, capacity) {}
 
+// No citizen-type restrictions currently.
+// Hook exists for future rules (e.g. minimum age for industrial work).
 bool IndustrialBuilding::canAcceptCitizen(
     const Citizen&
 ) const {

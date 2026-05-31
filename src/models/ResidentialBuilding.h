@@ -2,6 +2,9 @@
 
 #include "Building.h"
 
+// A building intended for citizens to live in.
+// This is the only type that can be assigned as a citizen's home (CityManager
+// enforces this rule). It cannot be used as a workplace.
 class ResidentialBuilding : public Building {
 public:
     ResidentialBuilding(

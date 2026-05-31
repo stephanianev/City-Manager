@@ -9,6 +9,8 @@ ResidentialBuilding::ResidentialBuilding(
     size_t capacity
 ) : Building(id, name, capacity) {}
 
+// No citizen-type restrictions for residential buildings — any citizen can live here.
+// This override exists as a hook for future rules (e.g. age-restricted housing).
 bool ResidentialBuilding::canAcceptCitizen(const Citizen&) const {
     return true;
 }

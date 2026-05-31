@@ -8,6 +8,9 @@ using namespace std;
 
 namespace {
 
+// Returns true if every character in str is whitespace.
+// Used to reject names that are technically non-empty but effectively blank
+// (e.g. "   " or "\t\n").
 bool isWhitespaceOnly(const string& str) {
     return all_of(str.begin(), str.end(),
         [](unsigned char c) {
@@ -15,6 +18,12 @@ bool isWhitespaceOnly(const string& str) {
         });
 }
 
+// Returns true if str contains any character that would break the
+// pipe-delimited save format used by CitySerializer:
+//   '|'  — field delimiter
+//   '\n' — record delimiter
+//   '\r' — Windows line-ending that the loader strips; embedding it mid-field
+//           would corrupt the parse
 bool hasForbiddenSerializationChars(const string& str) {
     return str.find('|') != string::npos
         || str.find('\n') != string::npos

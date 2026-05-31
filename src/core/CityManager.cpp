@@ -8,6 +8,8 @@
 
 using namespace std;
 
+// --- Map accessors (used by CitySerializer) ---
+
 const unordered_map<int, shared_ptr<Citizen>>&
 CityManager::getCitizens() const {
     return citizens;
@@ -18,6 +20,8 @@ CityManager::getBuildings() const {
     return buildings;
 }
 
+// Returns true if str is empty or contains only whitespace characters.
+// Used to reject search inputs that would match nothing meaningful.
 bool CityManager::isBlank(const string& str) const {
     return all_of(str.begin(), str.end(),
         [](unsigned char c) {
@@ -25,6 +29,8 @@ bool CityManager::isBlank(const string& str) const {
         });
 }
 
+// Internal helper: look up a citizen or throw.
+// Centralises the find + "does not exist" check so callers don't repeat it.
 shared_ptr<Citizen>
 CityManager::getCitizenOrThrow(
     int id
@@ -41,6 +47,7 @@ CityManager::getCitizenOrThrow(
     return it->second;
 }
 
+// Internal helper: look up a building or throw.
 shared_ptr<Building>
 CityManager::getBuildingOrThrow(
     int id
@@ -57,6 +64,19 @@ CityManager::getBuildingOrThrow(
     return it->second;
 }
 
+//--------------------------------------------------
+// createBuildingImpl<T>
+//
+// Single template that handles all four building types.
+// Type T must be a concrete subclass of Building with a
+// (int, string, size_t) constructor.
+//
+// Steps:
+//   1. Validate name and capacity (throws on bad input).
+//   2. Consume the next available ID.
+//   3. Construct and store the building.
+//   4. Emit a BuildingCreatedEvent.
+//--------------------------------------------------
 template<typename T>
 std::shared_ptr<T> CityManager::createBuildingImpl(
     const std::string& name,
@@ -82,6 +102,15 @@ std::shared_ptr<T> CityManager::createBuildingImpl(
     return building;
 }
 
+//--------------------------------------------------
+// restoreBuildingImpl<T>
+//
+// Silent counterpart to createBuildingImpl used during file loading.
+// Key differences vs. createBuildingImpl:
+//   - Accepts an explicit ID (from the save file) instead of auto-incrementing.
+//   - Advances nextBuildingId so post-load creation never reuses a saved ID.
+//   - Does NOT emit a BuildingCreatedEvent (restore is not a live creation).
+//--------------------------------------------------
 template<typename T>
 std::shared_ptr<Building> CityManager::restoreBuildingImpl(
     int id,
@@ -92,20 +121,29 @@ std::shared_ptr<Building> CityManager::restoreBuildingImpl(
         throw invalid_argument("Building ID already exists");
     }
 
+    Validation::validateBuildingName(name);
+    Validation::validateBuildingCapacity(capacity);
+
     auto building = make_shared<T>(id, name, capacity);
 
     buildings[id] = building;
 
+    // Ensure the next auto-assigned ID is always higher than any restored ID.
     nextBuildingId = max(nextBuildingId, id + 1);
 
     return building;
 }
+
+//--------------------------------------------------
+// Citizen creation
+//--------------------------------------------------
 
 shared_ptr<Citizen> CityManager::createCitizen(
     const string& name,
     int age,
     const string& profession
 ) {
+    // Validate before touching any state so that a failure leaves the city unchanged.
     Validation::validateCitizenName(name);
     Validation::validateCitizenAge(age);
 
@@ -130,6 +168,7 @@ shared_ptr<Citizen> CityManager::createCitizen(
     return citizen;
 }
 
+// Thin wrappers — each delegates to the appropriate template instantiation.
 shared_ptr<ResidentialBuilding> CityManager::createResidentialBuilding(
     const string& name, size_t capacity
 ) {
@@ -154,9 +193,13 @@ shared_ptr<ServiceBuilding> CityManager::createServiceBuilding(
     return createBuildingImpl<ServiceBuilding>(name, capacity);
 }
 
+//--------------------------------------------------
+// Update operations
+//--------------------------------------------------
+
 void CityManager::updateCitizenAge(int citizenId, int age) {
     auto citizen = getCitizenOrThrow(citizenId);
-    citizen->setAge(age);
+    citizen->setAge(age); // setAge validates the range internally
 
     eventManager.addEvent(
         make_shared<CitizenUpdatedEvent>(citizenId, citizen->getName())
@@ -188,6 +231,10 @@ void CityManager::renameBuilding(
     );
 }
 
+//--------------------------------------------------
+// Restoration operations (called by CitySerializer)
+//--------------------------------------------------
+
 shared_ptr<Citizen>
 CityManager::restoreCitizen(
     int id,
@@ -195,20 +242,14 @@ CityManager::restoreCitizen(
     int age,
     const string& profession
 ) {
-
-    //----------------------------------
-    // Prevent duplicate IDs
-    //----------------------------------
-
+    // Guard against duplicate IDs — the save file should never produce them,
+    // but we fail loudly rather than silently overwriting existing data.
     if (citizens.count(id)) {
-        throw invalid_argument(
-            "Citizen ID already exists"
-        );
+        throw invalid_argument("Citizen ID already exists");
     }
 
-    //----------------------------------
-    // Create citizen
-    //----------------------------------
+    Validation::validateCitizenName(name);
+    Validation::validateCitizenAge(age);
 
     auto citizen =
         make_shared<Citizen>(
@@ -220,16 +261,13 @@ CityManager::restoreCitizen(
 
     citizens[id] = citizen;
 
-    //----------------------------------
-    // Sync ID counter
-    //----------------------------------
-
-    nextCitizenId =
-        max(nextCitizenId, id + 1);
+    // Advance the counter so that post-load createCitizen() won't reuse this ID.
+    nextCitizenId = max(nextCitizenId, id + 1);
 
     return citizen;
 }
 
+// Thin wrappers for each building type — see restoreBuildingImpl for shared logic.
 shared_ptr<Building> CityManager::restoreResidentialBuilding(
     int id, const string& name, size_t capacity
 ) {
@@ -254,53 +292,45 @@ shared_ptr<Building> CityManager::restoreServiceBuilding(
     return restoreBuildingImpl<ServiceBuilding>(id, name, capacity);
 }
 
+//--------------------------------------------------
+// assignWorkplace
+//
+// Registers a building as the citizen's employer (logical relationship only).
+// This updates only the citizen's weak_ptr and does not change occupants.
+// (physically move the citizen by calling moveCitizen)
+//
+// Restrictions:
+//   - Residential buildings cannot be workplaces.
+//   - The building must have remaining capacity (based on physical occupants).
+//   - The building's canAcceptCitizen() hook must return true.
+//--------------------------------------------------
 void CityManager::assignWorkplace(
     int citizenId,
     int buildingId
 ) {
-
-    //--------------------------------------
-    // Validate citizen and building
-    //--------------------------------------
-
-    auto citizen = getCitizenOrThrow(citizenId);
-
+    auto citizen  = getCitizenOrThrow(citizenId);
     auto building = getBuildingOrThrow(buildingId);
 
-    //--------------------------------------
-    // Residential buildings forbidden
-    //--------------------------------------
-
+    // People live in residential buildings; they work in everything else.
     if (building->getBuildingType() == BuildingType::Residential) {
-        throw invalid_argument(
-            "Residential buildings cannot be workplaces"
-        );
+        throw invalid_argument("Residential buildings cannot be workplaces");
     }
 
-    //--------------------------------------
-    // Capacity validation
-    //--------------------------------------
+    if (citizen->getWorkplace()->getId() == buildingId) {
+        throw invalid_argument("Can not assign current workplace");
+    }
 
     if (!building->hasCapacity()) {
-        throw runtime_error(
-            "Building is full"
-        );
+        throw runtime_error("Building is full");
     }
 
-    //--------------------------------------
-    // Validation hook
-    //--------------------------------------
-
+    // canAcceptCitizen is a subclass hook for future admission rules.
     if (!building->canAcceptCitizen(*citizen)) {
-        throw runtime_error(
-            "Citizen rejected by building"
-        );
+        throw runtime_error("Citizen rejected by building");
     }
 
-    //--------------------------------------
-    // Synchronize state
-    //--------------------------------------
-
+    // Workplace is a logical relationship only:
+    // it updates the citizen's reference, but it does not modify occupants.
     citizen->setWorkplace(building);
 
     eventManager.addEvent(
@@ -311,56 +341,51 @@ void CityManager::assignWorkplace(
     );
 }
 
+//--------------------------------------------------
+// moveCitizen
+//
+// Physically relocates a citizen to a building (simulation layer).
+// This is the only operation that changes Building::occupants.
+//
+// Steps:
+//   1. Validate both IDs.
+//   2. Check capacity and acceptance hook.
+//   3. Remove citizen from their previous physical location (if any).
+//   4. Add citizen to the new building's occupant list.
+//   5. Update citizen.currentLocation.
+//   6. Emit CitizenMovedEvent.
+//--------------------------------------------------
 void CityManager::moveCitizen(
     int citizenId,
     int buildingId
 ) {
-
-    //--------------------------------------
-    // Validate citizen and building
-    //--------------------------------------
-
-    auto citizen = getCitizenOrThrow(citizenId);
-
+    auto citizen  = getCitizenOrThrow(citizenId);
     auto building = getBuildingOrThrow(buildingId);
 
-    //--------------------------------------
-    // Capacity validation
-    //--------------------------------------
+    // Moving to the same physical location is a no-op.
+    if (auto currentLocation = citizen->getLocation()) {
+        if (currentLocation->getId() == buildingId) {
+            return;
+        }
+    }
 
     if (!building->hasCapacity()) {
-        throw runtime_error(
-            "Building is full"
-        );
+        throw runtime_error("Building is full");
     }
-
-    //--------------------------------------
-    // Validation hook
-    //--------------------------------------
 
     if (!building->canAcceptCitizen(*citizen)) {
-        throw runtime_error(
-            "Citizen rejected by building"
-        );
+        throw runtime_error("Citizen rejected by building");
     }
 
-    //--------------------------------------
-    // Remove old location
-    //--------------------------------------
-
-    if (auto oldLocation =
-        citizen->getLocation()) {
-
-        oldLocation->removeOccupant(
-            citizenId
-        );
+    // Remove from old physical location before adding to the new one.
+    if (auto oldLocation = citizen->getLocation()) {
+        oldLocation->removeOccupant(citizenId);
     }
 
-    //--------------------------------------
-    // Add new location
-    //--------------------------------------
-
-    building->addOccupant(citizen); // changes physical location of citizen
+    // addOccupant is private to Building; CityManager has friend access.
+    // It is idempotent — moving a citizen to the building they're already in
+    // is a no-op on the occupants list (handled by the early return above).
+    building->addOccupant(citizen);
 
     citizen->setLocation(building);
 
@@ -372,60 +397,38 @@ void CityManager::moveCitizen(
     );
 }
 
+//--------------------------------------------------
+// assignHome
+//
+// Registers a residential building as the citizen's home (logical only).
+// This updates only the citizen's weak_ptr and does not change occupants.
+//--------------------------------------------------
 void CityManager::assignHome(
     int citizenId,
     int buildingId
 ) {
-
-    //--------------------------------------
-    // Validate citizen and building
-    //--------------------------------------
-
-    auto citizen = getCitizenOrThrow(citizenId);
-
+    auto citizen  = getCitizenOrThrow(citizenId);
     auto building = getBuildingOrThrow(buildingId);
 
-    //--------------------------------------
-    // Building type validation
-    //--------------------------------------
-
+    // Only residential buildings can be homes.
     if (building->getBuildingType() != BuildingType::Residential) {
-        throw invalid_argument(
-            "Home must be residential"
-        );
+        throw invalid_argument("Home must be residential");
     }
 
-    //--------------------------------------
-    // Capacity validation
-    //--------------------------------------
+    if (citizen->getHome()->getId() == buildingId) {
+        throw invalid_argument("Can not assign citizen to current home");
+    }
 
     if (!building->hasCapacity()) {
-        throw runtime_error(
-            "Building is full"
-        );
+        throw runtime_error("Building is full");
     }
-
-    //--------------------------------------
-    // Validation hook
-    //--------------------------------------
 
     if (!building->canAcceptCitizen(*citizen)) {
-        throw runtime_error(
-            "Citizen rejected by building"
-        );
+        throw runtime_error("Citizen rejected by building");
     }
 
-    //--------------------------------------
-    // Synchronize state
-    //--------------------------------------
-
-    if (auto oldHome = citizen->getHome()) {
-
-        oldHome->removeOccupant(
-            citizen->getId()
-        );
-    }
-
+    // Home is a logical relationship only:
+    // it updates the citizen's reference, but it does not modify occupants.
     citizen->setHome(building);
 
     eventManager.addEvent(
@@ -436,95 +439,75 @@ void CityManager::assignHome(
     );
 }
 
+//--------------------------------------------------
+// removeCitizen
+//
+// Destroys the city's ownership of a citizen.
+// Before erasing the map entry, we clean up the citizen's physical location:
+// they are removed from whichever building they are currently in.
+// Home and workplace weak_ptrs on the citizen expire automatically once the
+// shared_ptr is destroyed — no explicit nulling is needed for those.
+//--------------------------------------------------
 void CityManager::removeCitizen(
     int citizenId
 ) {
 
-    //--------------------------------------
-    // Validate citizen
-    //--------------------------------------
-
     auto citizen = getCitizenOrThrow(citizenId);
 
-    //--------------------------------------
-    // Remove from current location
-    //--------------------------------------
-
-    if (auto location =
-        citizen->getLocation()) {
-
-        location->removeOccupant(
-            citizenId
-        );
+    // Remove the citizen from whichever building they are physically in.
+    if (auto location = citizen->getLocation()) {
+        location->removeOccupant(citizenId);
     }
-
-    //--------------------------------------
-    // Remove citizen from storage
-    //--------------------------------------
 
     eventManager.addEvent(
         make_shared<CitizenRemovedEvent>(citizenId)
     );
 
     citizens.erase(citizenId);
+    // At this point the shared_ptr ref count drops; if no other pointer
+    // holds the citizen, the Citizen object is destroyed and all weak_ptrs
+    // pointing to it automatically become expired.
 }
 
+//--------------------------------------------------
+// removeBuilding
+//
+// Destroys the city's ownership of a building.
+// Before erasing, we iterate all citizens and explicitly null any home,
+// workplace, or location reference that pointed to this building.
+// We cannot rely on weak_ptr expiry here because citizens hold weak_ptrs
+// to buildings (not the other way around); the weak_ptr would only expire
+// when the shared_ptr is destroyed, which happens after we erase it — but
+// a citizen could still briefly observe a building ID that no longer exists
+// if we didn't clear the references first.
+//--------------------------------------------------
 void CityManager::removeBuilding(
     int buildingId
 ) {
 
-    //--------------------------------------
-    // Validate building
-    //--------------------------------------
+    auto building = getBuildingOrThrow(buildingId);
 
-    auto building = getBuildingOrThrow(buildingId);   
-
-    //--------------------------------------
-    // Clear citizen references
-    //--------------------------------------
-
+    // Walk every citizen and clear any reference pointing at this building.
     for (const auto& [id, citizen] : citizens) {
 
-        //----------------------------------
-        // Home
-        //----------------------------------
-
-        if (auto home =
-            citizen->getHome()) {
-
+        if (auto home = citizen->getHome()) {
             if (home->getId() == buildingId) {
                 citizen->setHome(nullptr);
             }
         }
 
-        //----------------------------------
-        // Workplace
-        //----------------------------------
-
-        if (auto workplace =
-            citizen->getWorkplace()) {
-
+        if (auto workplace = citizen->getWorkplace()) {
             if (workplace->getId() == buildingId) {
                 citizen->setWorkplace(nullptr);
             }
         }
 
-        //----------------------------------
-        // Current location
-        //----------------------------------
-
-        if (auto location =
-            citizen->getLocation()) {
-
+        if (auto location = citizen->getLocation()) {
             if (location->getId() == buildingId) {
                 citizen->setLocation(nullptr);
             }
         }
     }
-
-    //--------------------------------------
-    // Remove building
-    //--------------------------------------
 
     eventManager.addEvent(
         make_shared<BuildingRemovedEvent>(buildingId)
@@ -532,6 +515,10 @@ void CityManager::removeBuilding(
 
     buildings.erase(buildingId);
 }
+
+//--------------------------------------------------
+// Query operations
+//--------------------------------------------------
 
 vector<shared_ptr<Citizen>>
 CityManager::findCitizensByProfession(
@@ -541,7 +528,6 @@ CityManager::findCitizensByProfession(
     vector<shared_ptr<Citizen>> result;
 
     for (const auto& [id, citizen] : citizens) {
-
         if (citizen->getProfession() == profession) {
             result.push_back(citizen);
         }
@@ -550,6 +536,7 @@ CityManager::findCitizensByProfession(
     return result;
 }
 
+// Returns physical occupants of a building (set by moveCitizen).
 vector<shared_ptr<Citizen>>
 CityManager::listCitizensInBuilding(
     int buildingId
@@ -566,7 +553,6 @@ CityManager::findBuildingsWithCapacity() const {
     vector<shared_ptr<Building>> result;
 
     for (const auto& [id, building] : buildings) {
-
         if (building->hasCapacity()) {
             result.push_back(building);
         }
@@ -575,6 +561,9 @@ CityManager::findBuildingsWithCapacity() const {
     return result;
 }
 
+// Finds all citizens whose name exactly matches the given string.
+// Results are sorted by ID for deterministic ordering (the map iterates
+// in hash order, which is not guaranteed to be stable).
 vector<shared_ptr<Citizen>> CityManager::findCitizensByName(const string& name) const {
     if (name.empty() || isBlank(name)) {
         throw invalid_argument("Search name cannot be empty or blank");
@@ -596,6 +585,7 @@ vector<shared_ptr<Citizen>> CityManager::findCitizensByName(const string& name) 
     return result;
 }
 
+// Same as findCitizensByName but for buildings.
 vector<shared_ptr<Building>> CityManager::findBuildingsByName(const string& name) const {
     if (name.empty() || isBlank(name)) {
         throw invalid_argument("Search name cannot be empty or blank");
@@ -617,6 +607,9 @@ vector<shared_ptr<Building>> CityManager::findBuildingsByName(const string& name
     return result;
 }
 
+// Generic citizen filter. Caller supplies a predicate; we return all citizens
+// for which predicate returns true. Useful for ad-hoc queries without adding
+// new named methods (e.g. "all citizens over 30 who are Engineers").
 vector<shared_ptr<Citizen>>
 CityManager::queryCitizens(
     function<bool(
@@ -628,9 +621,7 @@ CityManager::queryCitizens(
 
     vector<shared_ptr<Citizen>> result;
 
-    for (const auto& [id, citizen]
-         : citizens) {
-
+    for (const auto& [id, citizen] : citizens) {
         if (predicate(citizen)) {
             result.push_back(citizen);
         }
@@ -639,6 +630,7 @@ CityManager::queryCitizens(
     return result;
 }
 
+// Generic building filter — same pattern as queryCitizens.
 vector<shared_ptr<Building>>
 CityManager::queryBuildings(
     function<bool(
@@ -650,9 +642,7 @@ CityManager::queryBuildings(
 
     vector<shared_ptr<Building>> result;
 
-    for (const auto& [id, building]
-         : buildings) {
-
+    for (const auto& [id, building] : buildings) {
         if (predicate(building)) {
             result.push_back(building);
         }
@@ -660,6 +650,10 @@ CityManager::queryBuildings(
 
     return result;
 }
+
+//--------------------------------------------------
+// Statistics
+//--------------------------------------------------
 
 size_t CityManager::getTotalCitizens() const {
     return citizens.size();
@@ -674,7 +668,7 @@ size_t CityManager::getHomelessCount() const {
     size_t count = 0;
 
     for (const auto& [id, citizen] : citizens) {
-
+        // getHome() returns nullptr if no home is assigned.
         if (!citizen->getHome()) {
             count++;
         }
@@ -688,7 +682,6 @@ size_t CityManager::getUnemployedCount() const {
     size_t count = 0;
 
     for (const auto& [id, citizen] : citizens) {
-
         if (!citizen->getWorkplace()) {
             count++;
         }
@@ -697,7 +690,10 @@ size_t CityManager::getUnemployedCount() const {
     return count;
 }
 
-double CityManager::getOccupancyRate(int buildingId) const { // Returns value in [0.0, 1.0]
+// Returns the physical occupancy ratio for a single building in [0.0, 1.0].
+// The capacity == 0 guard is defensive — Building's constructor already
+// rejects zero capacity, but a future code path might bypass that.
+double CityManager::getOccupancyRate(int buildingId) const {
 
     auto building = getBuildingOrThrow(buildingId);
 
@@ -717,17 +713,14 @@ double CityManager::getAverageCitizenAge() const {
 
     unsigned long totalAge = 0;
 
-    for (const auto& [id, citizen]
-         : citizens) {
-
+    for (const auto& [id, citizen] : citizens) {
         totalAge += citizen->getAge();
     }
 
-    return static_cast<double>(
-        totalAge
-    ) / citizens.size();
+    return static_cast<double>(totalAge) / citizens.size();
 }
 
+// Returns the fraction of citizens who have a workplace assigned [0.0, 1.0].
 double CityManager::getEmploymentRate() const {
 
     if (citizens.empty()) {
@@ -736,66 +729,54 @@ double CityManager::getEmploymentRate() const {
 
     unsigned long employed = 0;
 
-    for (const auto& [id, citizen]
-         : citizens) {
-
+    for (const auto& [id, citizen] : citizens) {
         if (citizen->getWorkplace()) {
             employed++;
         }
     }
 
-    return static_cast<double>(
-        employed
-    ) / citizens.size();
+    return static_cast<double>(employed) / citizens.size();
 }
 
+// Computes the average physical occupancy ratio per building type.
+// Uses two parallel maps (total occupants and total capacity per type) so
+// we can compute the aggregate ratio in a single pass over all buildings,
+// then divide at the end.
 unordered_map<string, double>
 CityManager::getAverageOccupancyByType() const {
 
-    unordered_map<string, int>
-        totalOccupants;
+    unordered_map<string, int> totalOccupants;
+    unordered_map<string, int> totalCapacity;
 
-    unordered_map<string, int>
-        totalCapacity;
-
-    for (const auto& [id, building]
-         : buildings) {
-
-        totalOccupants[
-            building->getType()
-        ]
-        += building->getOccupantCount();
-
-        totalCapacity[
-            building->getType()
-        ]
-        += building->getCapacity();
+    for (const auto& [id, building] : buildings) {
+        totalOccupants[building->getType()] += building->getOccupantCount();
+        totalCapacity [building->getType()] += building->getCapacity();
     }
 
-    unordered_map<string, double>
-        result;
+    unordered_map<string, double> result;
 
-    for (const auto& [type, capacity]
-         : totalCapacity) {
-
+    for (const auto& [type, capacity] : totalCapacity) {
         if (capacity == 0) {
-
             result[type] = 0.0;
         }
         else {
-
             result[type] =
-                static_cast<double>(
-                    totalOccupants[type]
-                )
-                / capacity;
+                static_cast<double>(totalOccupants[type]) / capacity;
         }
     }
 
     return result;
 }
 
-const EventManager& CityManager::getEventManager() const {return eventManager;}
+const EventManager& CityManager::getEventManager() const { return eventManager; }
+
+//--------------------------------------------------
+// Sorting
+//
+// Both sort functions take their input vector by value (copy) so that the
+// caller's original collection is not modified. The copy is sorted in-place
+// and returned — this is an intentional "sort a snapshot" pattern.
+//--------------------------------------------------
 
 vector<shared_ptr<Citizen>>
 CityManager::sortCitizens(
@@ -833,17 +814,19 @@ CityManager::sortBuildings(
     return buildingsToSort;
 }
 
+//--------------------------------------------------
+// Reporting
+//--------------------------------------------------
+
+// Counts citizens per profession string. Citizens with no profession
+// (empty string) appear under "" — the UI displays them as "Jobless".
 unordered_map<string, int>
 CityManager::getProfessionDistribution() const {
 
     unordered_map<string, int> result;
 
-    for (const auto& [id, citizen]
-         : citizens) {
-
-        result[
-            citizen->getProfession()
-        ]++;
+    for (const auto& [id, citizen] : citizens) {
+        result[citizen->getProfession()]++;
     }
 
     return result;
@@ -854,35 +837,27 @@ CityManager::getBuildingTypeDistribution() const {
 
     unordered_map<string, int> result;
 
-    for (const auto& [id, building]
-         : buildings) {
-
-        result[
-            building->getType()
-        ]++;
+    for (const auto& [id, building] : buildings) {
+        result[building->getType()]++;
     }
 
     return result;
 }
 
+// Returns (name, occupancy ratio) for every building.
+// Useful for showing a per-building breakdown in the UI.
 vector<pair<string, double>>
 CityManager::getBuildingOccupancyReport() const {
 
     vector<pair<string, double>> result;
 
-    for (const auto& [id, building]
-         : buildings) {
+    for (const auto& [id, building] : buildings) {
 
         double rate = 0.0;
 
         if (building->getCapacity() > 0) {
-
-            rate =
-                static_cast<double>(
-                    building->getOccupantCount()
-                )
-                /
-                building->getCapacity();
+            rate = static_cast<double>(building->getOccupantCount())
+                   / building->getCapacity();
         }
 
         result.push_back(std::make_pair(

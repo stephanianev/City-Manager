@@ -9,6 +9,8 @@ CommercialBuilding::CommercialBuilding(
     size_t capacity
 ) : Building(id, name, capacity) {}
 
+// No citizen-type restrictions — any citizen can work or be present here.
+// This override is a hook for future rules (e.g. profession requirements).
 bool CommercialBuilding::canAcceptCitizen(
     const Citizen&
 ) const {
