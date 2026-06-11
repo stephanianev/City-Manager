@@ -1,6 +1,7 @@
 CXX = g++
 CXXFLAGS = -std=c++17 -Wall
 
+# Change main.cpp with tests.cpp for running tests
 SRC = src/main.cpp \
       src/core/CityManager.cpp \
       src/models/Citizen.cpp \
@@ -13,7 +14,8 @@ SRC = src/main.cpp \
       src/events/EventManager.cpp \
       src/events/ModelEvents.cpp \
       src/events/Event.cpp \
-      src/utils/Validation.cpp
+      src/utils/Validation.cpp \
+      src/ui/ConsoleUI.cpp
 
 TARGET = app
 
